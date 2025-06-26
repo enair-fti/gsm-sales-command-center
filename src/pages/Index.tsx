@@ -6,6 +6,7 @@ import DailyStationStatus from '@/components/dashboard/DailyStationStatus';
 import DailyDeclinersAdders from '@/components/dashboard/DailyDeclinersAdders';
 import TopAdvertisers from '@/components/dashboard/TopAdvertisers';
 import QuarterlyPerformance from '@/components/dashboard/QuarterlyPerformance';
+import MonthlyProjections from '@/components/dashboard/MonthlyProjections';
 import AIChatbot from '@/components/dashboard/AIChatbot';
 
 const Index = () => {
@@ -18,7 +19,7 @@ const Index = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Sales Enablement Dashboard</h1>
-            <p className="text-sm text-gray-600">Real-time insights for General Sales Managers</p>
+            <p className="text-sm text-gray-600">Real-time broadcast media analytics for General Sales Managers</p>
           </div>
           <div className="flex items-center space-x-4">
             <select 
@@ -44,8 +45,9 @@ const Index = () => {
         {/* Main Dashboard Content */}
         <div className="flex-1 p-6">
           <Tabs defaultValue="daily-status" className="h-full">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="daily-status">Daily Station Status</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsTrigger value="daily-status">Daily Status</TabsTrigger>
+              <TabsTrigger value="monthly-projections">Monthly Projections</TabsTrigger>
               <TabsTrigger value="decliners-adders">Decliners/Adders</TabsTrigger>
               <TabsTrigger value="top-advertisers">Top 100 Advertisers</TabsTrigger>
               <TabsTrigger value="quarterly-performance">Quarterly Performance</TabsTrigger>
@@ -53,6 +55,10 @@ const Index = () => {
             
             <TabsContent value="daily-status" className="h-[calc(100%-60px)]">
               <DailyStationStatus station={selectedStation} />
+            </TabsContent>
+            
+            <TabsContent value="monthly-projections" className="h-[calc(100%-60px)]">
+              <MonthlyProjections station={selectedStation} />
             </TabsContent>
             
             <TabsContent value="decliners-adders" className="h-[calc(100%-60px)]">
