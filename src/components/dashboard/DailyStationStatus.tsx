@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,7 @@ interface DailyStationStatusProps {
 }
 
 const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
-  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('monthly');
 
   // Sales Performance Report (13-Month View)
   const salesPerformanceData = [
@@ -123,16 +122,6 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
       <div className="flex items-center justify-between">
         <div className="flex space-x-2">
           <button
-            onClick={() => setViewMode('daily')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'daily' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Daily View
-          </button>
-          <button
             onClick={() => setViewMode('monthly')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'monthly' 
@@ -141,6 +130,16 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
             }`}
           >
             13-Month Trend
+          </button>
+          <button
+            onClick={() => setViewMode('daily')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'daily' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Daily View
           </button>
         </div>
         <Badge variant="outline" className="text-sm">
