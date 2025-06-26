@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -79,36 +80,40 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
 
   const kpiData = [
     { 
-      title: "Booked Revenue", 
+      title: "💰 Booked Revenue", 
       value: "$267,000", 
       change: "+8.9%", 
       positive: true,
       icon: DollarSign,
-      tooltip: "Total confirmed revenue for current period"
+      tooltip: "Total confirmed revenue for current period",
+      gradient: "from-green-400 to-emerald-500"
     },
     { 
-      title: "Pacing %", 
+      title: "🎯 Pacing %", 
       value: "94.7%", 
       change: "vs projection", 
       positive: false,
       icon: Target,
-      tooltip: "Booked Revenue / Projection Target"
+      tooltip: "Booked Revenue / Projection Target",
+      gradient: "from-orange-400 to-red-500"
     },
     { 
-      title: "Pending Orders", 
+      title: "⏳ Pending Orders", 
       value: "$41,000", 
       change: "+$3K", 
       positive: true,
       icon: Calendar,
-      tooltip: "Revenue pending finalization"
+      tooltip: "Revenue pending finalization",
+      gradient: "from-blue-400 to-cyan-500"
     },
     { 
-      title: "YoY Growth", 
+      title: "📈 YoY Growth", 
       value: "+8.9%", 
       change: "vs Jan 23", 
       positive: true,
       icon: TrendingUp,
-      tooltip: "Year-over-year growth comparison"
+      tooltip: "Year-over-year growth comparison",
+      gradient: "from-purple-400 to-pink-500"
     },
   ];
 
@@ -117,53 +122,53 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
   };
 
   return (
-    <div className="h-full overflow-auto space-y-6">
+    <div className="h-full overflow-auto space-y-6 p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-2xl">
       {/* View Toggle */}
       <div className="flex items-center justify-between">
-        <div className="flex space-x-2">
+        <div className="flex space-x-3">
           <button
             onClick={() => setViewMode('monthly')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl text-sm font-black transition-all duration-300 transform hover:scale-105 shadow-lg border-2 ${
               viewMode === 'monthly' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 border-white shadow-2xl' 
+                : 'bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400 border-gray-300'
             }`}
           >
-            13-Month Trend
+            📊 13-Month Trend
           </button>
           <button
             onClick={() => setViewMode('daily')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl text-sm font-black transition-all duration-300 transform hover:scale-105 shadow-lg border-2 ${
               viewMode === 'daily' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white border-white shadow-2xl' 
+                : 'bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400 border-gray-300'
             }`}
           >
-            Daily View
+            📅 Daily View
           </button>
         </div>
-        <Badge variant="outline" className="text-sm">
-          Station: {station}
+        <Badge variant="outline" className="text-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold border-2 border-white px-4 py-2 rounded-xl shadow-lg">
+          🏢 Station: {station}
         </Badge>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-6">
         {kpiData.map((kpi, index) => (
-          <Card key={index} className="relative group cursor-help">
+          <Card key={index} className={`relative group cursor-help transform hover:scale-105 transition-all duration-300 shadow-xl bg-gradient-to-br ${kpi.gradient} border-2 border-white/50 backdrop-blur-sm`}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">{kpi.title}</CardTitle>
-                <kpi.icon className="w-4 h-4 text-gray-400" />
+                <CardTitle className="text-sm font-bold text-white drop-shadow-md">{kpi.title}</CardTitle>
+                <kpi.icon className="w-5 h-5 text-white drop-shadow-md" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{kpi.value}</div>
-              <div className={`text-sm ${kpi.positive ? 'text-green-600' : 'text-orange-600'}`}>
+              <div className="text-3xl font-black text-white drop-shadow-lg">{kpi.value}</div>
+              <div className={`text-sm font-bold ${kpi.positive ? 'text-yellow-200' : 'text-orange-200'} drop-shadow-md`}>
                 {kpi.change}
               </div>
               {/* Tooltip */}
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 font-medium shadow-xl">
                 {kpi.tooltip}
               </div>
             </CardContent>
@@ -173,60 +178,77 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
 
       {viewMode === 'monthly' ? (
         /* Sales Performance Report (13-Month View) */
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Performance Report (13-Month Trend)</CardTitle>
-            <CardDescription>Booked vs Projected Revenue with YoY Growth</CardDescription>
+        <Card className="shadow-2xl bg-gradient-to-br from-white to-blue-50 border-2 border-blue-200 rounded-2xl">
+          <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-2xl">
+            <CardTitle className="text-xl font-black drop-shadow-md">📊 Sales Performance Report (13-Month Trend)</CardTitle>
+            <CardDescription className="text-blue-100 font-medium">📈 Booked vs Projected Revenue with YoY Growth</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-80 mb-6">
+          <CardContent className="p-6">
+            <div className="h-80 mb-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={salesPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" angle={-45} textAnchor="end" height={60} />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e7ff" />
+                  <XAxis dataKey="month" angle={-45} textAnchor="end" height={60} stroke="#4338ca" fontWeight="bold" />
+                  <YAxis yAxisId="left" stroke="#059669" fontWeight="bold" />
+                  <YAxis yAxisId="right" orientation="right" stroke="#dc2626" fontWeight="bold" />
                   <Tooltip 
                     formatter={(value, name) => {
-                      if (name === 'yoyChange') return [`${value}%`, 'YoY Change'];
+                      if (name === 'yoyChange') return [`${value}%`, '📈 YoY Change'];
                       return [`$${value?.toLocaleString()}`, name];
                     }}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '2px solid #3b82f6',
+                      borderRadius: '12px',
+                      fontWeight: 'bold',
+                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                    }}
                   />
-                  <Bar yAxisId="left" dataKey="booked" fill="#22c55e" name="Booked" />
-                  <Bar yAxisId="left" dataKey="pending" fill="#f59e0b" name="Pending" />
-                  <Line yAxisId="right" type="monotone" dataKey="yoyChange" stroke="#ef4444" strokeWidth={3} name="YoY Change %" />
+                  <Bar yAxisId="left" dataKey="booked" fill="url(#bookedGradient)" name="💰 Booked" />
+                  <Bar yAxisId="left" dataKey="pending" fill="url(#pendingGradient)" name="⏳ Pending" />
+                  <Line yAxisId="right" type="monotone" dataKey="yoyChange" stroke="#ef4444" strokeWidth={4} name="📈 YoY Change %" />
+                  <defs>
+                    <linearGradient id="bookedGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#059669" />
+                    </linearGradient>
+                    <linearGradient id="pendingGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f59e0b" />
+                      <stop offset="100%" stopColor="#d97706" />
+                    </linearGradient>
+                  </defs>
                 </LineChart>
               </ResponsiveContainer>
             </div>
 
-            {/* Performance Table */}
-            <div className="overflow-x-auto">
+            {/* Performance Table with bright styling */}
+            <div className="overflow-x-auto bg-gradient-to-br from-white to-blue-50 rounded-xl border-2 border-blue-200 shadow-lg">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 font-medium text-gray-600">Month</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Booked</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Pending</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Finalized</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Projection</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Pacing %</th>
-                    <th className="text-right py-2 font-medium text-gray-600">YoY Change</th>
+                  <tr className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                    <th className="text-left py-3 px-4 font-black">📅 Month</th>
+                    <th className="text-right py-3 px-4 font-black">💰 Booked</th>
+                    <th className="text-right py-3 px-4 font-black">⏳ Pending</th>
+                    <th className="text-right py-3 px-4 font-black">✅ Finalized</th>
+                    <th className="text-right py-3 px-4 font-black">🎯 Projection</th>
+                    <th className="text-right py-3 px-4 font-black">📊 Pacing %</th>
+                    <th className="text-right py-3 px-4 font-black">📈 YoY Change</th>
                   </tr>
                 </thead>
                 <tbody>
                   {salesPerformanceData.slice(-6).map((row, index) => (
-                    <tr key={index} className="border-b border-gray-100">
-                      <td className="py-2 font-medium">{row.month}</td>
-                      <td className="py-2 text-right">${row.booked.toLocaleString()}</td>
-                      <td className="py-2 text-right text-orange-600">${row.pending.toLocaleString()}</td>
-                      <td className="py-2 text-right text-green-600">${row.finalized.toLocaleString()}</td>
-                      <td className="py-2 text-right text-blue-600">${row.projection.toLocaleString()}</td>
-                      <td className={`py-2 text-right font-medium ${
+                    <tr key={index} className="border-b border-blue-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200">
+                      <td className="py-3 px-4 font-bold text-blue-900">{row.month}</td>
+                      <td className="py-3 px-4 text-right font-bold text-green-700">${row.booked.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-bold text-orange-600">${row.pending.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-bold text-emerald-600">${row.finalized.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-bold text-blue-600">${row.projection.toLocaleString()}</td>
+                      <td className={`py-3 px-4 text-right font-black ${
                         parseFloat(calculatePacing(row.booked, row.projection)) >= 100 ? 'text-green-600' : 'text-orange-600'
                       }`}>
                         {calculatePacing(row.booked, row.projection)}%
                       </td>
-                      <td className={`py-2 text-right font-medium ${
+                      <td className={`py-3 px-4 text-right font-black ${
                         row.yoyChange >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {row.yoyChange >= 0 ? '+' : ''}{row.yoyChange}%
@@ -239,52 +261,52 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
           </CardContent>
         </Card>
       ) : (
-        /* End-of-Day Booking Extract */
-        <Card>
-          <CardHeader>
-            <CardTitle>End-of-Day Booking Extract</CardTitle>
-            <CardDescription>Daily booking activity by station, agency, and advertiser</CardDescription>
+        /* End-of-Day Booking Extract with bright styling */
+        <Card className="shadow-2xl bg-gradient-to-br from-white to-cyan-50 border-2 border-cyan-200 rounded-2xl">
+          <CardHeader className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-t-2xl">
+            <CardTitle className="text-xl font-black drop-shadow-md">📊 End-of-Day Booking Extract</CardTitle>
+            <CardDescription className="text-cyan-100 font-medium">📅 Daily booking activity by station, agency, and advertiser</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
+          <CardContent className="p-6">
+            <div className="overflow-x-auto bg-gradient-to-br from-white to-cyan-50 rounded-xl border-2 border-cyan-200 shadow-lg">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 font-medium text-gray-600">Station</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Agency</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Advertiser</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Buyer/Affiliation</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Office/AE</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Share %</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Current $</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Previous $</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Difference</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Market $</th>
+                  <tr className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
+                    <th className="text-left py-3 px-4 font-black">🏢 Station</th>
+                    <th className="text-left py-3 px-4 font-black">🏢 Agency</th>
+                    <th className="text-left py-3 px-4 font-black">📺 Advertiser</th>
+                    <th className="text-left py-3 px-4 font-black">👤 Buyer/Affiliation</th>
+                    <th className="text-left py-3 px-4 font-black">🏢 Office/AE</th>
+                    <th className="text-right py-3 px-4 font-black">📊 Share %</th>
+                    <th className="text-right py-3 px-4 font-black">💰 Current $</th>
+                    <th className="text-right py-3 px-4 font-black">📈 Previous $</th>
+                    <th className="text-right py-3 px-4 font-black">📊 Difference</th>
+                    <th className="text-right py-3 px-4 font-black">🌟 Market $</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bookingExtractData.map((row, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 font-medium">{row.station}</td>
-                      <td className="py-3">{row.agency}</td>
-                      <td className="py-3 font-medium text-blue-600">{row.advertiser}</td>
-                      <td className="py-3">
-                        <div>{row.buyerName}</div>
-                        <div className="text-xs text-gray-500">{row.affiliation}</div>
+                    <tr key={index} className="border-b border-cyan-100 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-blue-50 transition-all duration-200">
+                      <td className="py-4 px-4 font-bold text-cyan-900">{row.station}</td>
+                      <td className="py-4 px-4 font-medium text-blue-800">{row.agency}</td>
+                      <td className="py-4 px-4 font-bold text-blue-600">{row.advertiser}</td>
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-gray-900">{row.buyerName}</div>
+                        <div className="text-xs text-gray-600 font-medium">{row.affiliation}</div>
                       </td>
-                      <td className="py-3">
-                        <div>{row.office}</div>
-                        <div className="text-xs text-gray-500">{row.aeName}</div>
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-gray-900">{row.office}</div>
+                        <div className="text-xs text-gray-600 font-medium">{row.aeName}</div>
                       </td>
-                      <td className="py-3 text-right font-medium">{row.stationShare}%</td>
-                      <td className="py-3 text-right font-bold">${row.current.toLocaleString()}</td>
-                      <td className="py-3 text-right text-gray-600">${row.previous.toLocaleString()}</td>
-                      <td className={`py-3 text-right font-medium ${
+                      <td className="py-4 px-4 text-right font-black text-purple-600">{row.stationShare}%</td>
+                      <td className="py-4 px-4 text-right font-black text-green-700">${row.current.toLocaleString()}</td>
+                      <td className="py-4 px-4 text-right font-medium text-gray-600">${row.previous.toLocaleString()}</td>
+                      <td className={`py-4 px-4 text-right font-black ${
                         row.difference >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {row.difference >= 0 ? '+' : ''}${row.difference.toLocaleString()}
                       </td>
-                      <td className="py-3 text-right text-blue-600 font-medium">${row.market.toLocaleString()}</td>
+                      <td className="py-4 px-4 text-right text-blue-600 font-black">${row.market.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
