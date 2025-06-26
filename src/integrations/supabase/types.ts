@@ -4394,6 +4394,258 @@ export type Database = {
         }
         Relationships: []
       }
+      temp_test1: {
+        Row: {
+          "# Headlines": number | null
+          Advertiser: string | null
+          Agency: string | null
+          "Billing $": number | null
+          "Billing $ (#1)": number | null
+          "Billing $ (#10)": number | null
+          "Billing $ (#11)": number | null
+          "Billing $ (#12)": number | null
+          "Billing $ (#13)": number | null
+          "Billing $ (#14)": number | null
+          "Billing $ (#15)": number | null
+          "Billing $ (#16)": number | null
+          "Billing $ (#17)": number | null
+          "Billing $ (#18)": number | null
+          "Billing $ (#19)": number | null
+          "Billing $ (#2)": number | null
+          "Billing $ (#20)": number | null
+          "Billing $ (#21)": number | null
+          "Billing $ (#22)": number | null
+          "Billing $ (#23)": number | null
+          "Billing $ (#24)": number | null
+          "Billing $ (#25)": number | null
+          "Billing $ (#3)": number | null
+          "Billing $ (#4)": number | null
+          "Billing $ (#5)": number | null
+          "Billing $ (#6)": number | null
+          "Billing $ (#7)": number | null
+          "Billing $ (#8)": number | null
+          "Billing $ (#9)": number | null
+          "Mkt $": number | null
+          "Mkt $ (#1)": number | null
+          "Mkt $ (#10)": number | null
+          "Mkt $ (#11)": number | null
+          "Mkt $ (#12)": number | null
+          "Mkt $ (#13)": number | null
+          "Mkt $ (#14)": number | null
+          "Mkt $ (#15)": number | null
+          "Mkt $ (#16)": number | null
+          "Mkt $ (#17)": number | null
+          "Mkt $ (#18)": number | null
+          "Mkt $ (#19)": number | null
+          "Mkt $ (#2)": number | null
+          "Mkt $ (#20)": number | null
+          "Mkt $ (#21)": number | null
+          "Mkt $ (#22)": number | null
+          "Mkt $ (#23)": number | null
+          "Mkt $ (#24)": number | null
+          "Mkt $ (#25)": number | null
+          "Mkt $ (#3)": number | null
+          "Mkt $ (#4)": number | null
+          "Mkt $ (#5)": number | null
+          "Mkt $ (#6)": number | null
+          "Mkt $ (#7)": number | null
+          "Mkt $ (#8)": number | null
+          "Mkt $ (#9)": number | null
+          "Rep %": number | null
+          "Rep % (#1)": number | null
+          "Rep % (#10)": number | null
+          "Rep % (#11)": number | null
+          "Rep % (#12)": number | null
+          "Rep % (#13)": number | null
+          "Rep % (#14)": number | null
+          "Rep % (#15)": number | null
+          "Rep % (#16)": number | null
+          "Rep % (#17)": number | null
+          "Rep % (#18)": number | null
+          "Rep % (#19)": number | null
+          "Rep % (#2)": number | null
+          "Rep % (#20)": number | null
+          "Rep % (#21)": number | null
+          "Rep % (#22)": number | null
+          "Rep % (#23)": number | null
+          "Rep % (#24)": number | null
+          "Rep % (#25)": number | null
+          "Rep % (#3)": number | null
+          "Rep % (#4)": number | null
+          "Rep % (#5)": number | null
+          "Rep % (#6)": number | null
+          "Rep % (#7)": number | null
+          "Rep % (#8)": number | null
+          "Rep % (#9)": number | null
+        }
+        Insert: {
+          "# Headlines"?: number | null
+          Advertiser?: string | null
+          Agency?: string | null
+          "Billing $"?: number | null
+          "Billing $ (#1)"?: number | null
+          "Billing $ (#10)"?: number | null
+          "Billing $ (#11)"?: number | null
+          "Billing $ (#12)"?: number | null
+          "Billing $ (#13)"?: number | null
+          "Billing $ (#14)"?: number | null
+          "Billing $ (#15)"?: number | null
+          "Billing $ (#16)"?: number | null
+          "Billing $ (#17)"?: number | null
+          "Billing $ (#18)"?: number | null
+          "Billing $ (#19)"?: number | null
+          "Billing $ (#2)"?: number | null
+          "Billing $ (#20)"?: number | null
+          "Billing $ (#21)"?: number | null
+          "Billing $ (#22)"?: number | null
+          "Billing $ (#23)"?: number | null
+          "Billing $ (#24)"?: number | null
+          "Billing $ (#25)"?: number | null
+          "Billing $ (#3)"?: number | null
+          "Billing $ (#4)"?: number | null
+          "Billing $ (#5)"?: number | null
+          "Billing $ (#6)"?: number | null
+          "Billing $ (#7)"?: number | null
+          "Billing $ (#8)"?: number | null
+          "Billing $ (#9)"?: number | null
+          "Mkt $"?: number | null
+          "Mkt $ (#1)"?: number | null
+          "Mkt $ (#10)"?: number | null
+          "Mkt $ (#11)"?: number | null
+          "Mkt $ (#12)"?: number | null
+          "Mkt $ (#13)"?: number | null
+          "Mkt $ (#14)"?: number | null
+          "Mkt $ (#15)"?: number | null
+          "Mkt $ (#16)"?: number | null
+          "Mkt $ (#17)"?: number | null
+          "Mkt $ (#18)"?: number | null
+          "Mkt $ (#19)"?: number | null
+          "Mkt $ (#2)"?: number | null
+          "Mkt $ (#20)"?: number | null
+          "Mkt $ (#21)"?: number | null
+          "Mkt $ (#22)"?: number | null
+          "Mkt $ (#23)"?: number | null
+          "Mkt $ (#24)"?: number | null
+          "Mkt $ (#25)"?: number | null
+          "Mkt $ (#3)"?: number | null
+          "Mkt $ (#4)"?: number | null
+          "Mkt $ (#5)"?: number | null
+          "Mkt $ (#6)"?: number | null
+          "Mkt $ (#7)"?: number | null
+          "Mkt $ (#8)"?: number | null
+          "Mkt $ (#9)"?: number | null
+          "Rep %"?: number | null
+          "Rep % (#1)"?: number | null
+          "Rep % (#10)"?: number | null
+          "Rep % (#11)"?: number | null
+          "Rep % (#12)"?: number | null
+          "Rep % (#13)"?: number | null
+          "Rep % (#14)"?: number | null
+          "Rep % (#15)"?: number | null
+          "Rep % (#16)"?: number | null
+          "Rep % (#17)"?: number | null
+          "Rep % (#18)"?: number | null
+          "Rep % (#19)"?: number | null
+          "Rep % (#2)"?: number | null
+          "Rep % (#20)"?: number | null
+          "Rep % (#21)"?: number | null
+          "Rep % (#22)"?: number | null
+          "Rep % (#23)"?: number | null
+          "Rep % (#24)"?: number | null
+          "Rep % (#25)"?: number | null
+          "Rep % (#3)"?: number | null
+          "Rep % (#4)"?: number | null
+          "Rep % (#5)"?: number | null
+          "Rep % (#6)"?: number | null
+          "Rep % (#7)"?: number | null
+          "Rep % (#8)"?: number | null
+          "Rep % (#9)"?: number | null
+        }
+        Update: {
+          "# Headlines"?: number | null
+          Advertiser?: string | null
+          Agency?: string | null
+          "Billing $"?: number | null
+          "Billing $ (#1)"?: number | null
+          "Billing $ (#10)"?: number | null
+          "Billing $ (#11)"?: number | null
+          "Billing $ (#12)"?: number | null
+          "Billing $ (#13)"?: number | null
+          "Billing $ (#14)"?: number | null
+          "Billing $ (#15)"?: number | null
+          "Billing $ (#16)"?: number | null
+          "Billing $ (#17)"?: number | null
+          "Billing $ (#18)"?: number | null
+          "Billing $ (#19)"?: number | null
+          "Billing $ (#2)"?: number | null
+          "Billing $ (#20)"?: number | null
+          "Billing $ (#21)"?: number | null
+          "Billing $ (#22)"?: number | null
+          "Billing $ (#23)"?: number | null
+          "Billing $ (#24)"?: number | null
+          "Billing $ (#25)"?: number | null
+          "Billing $ (#3)"?: number | null
+          "Billing $ (#4)"?: number | null
+          "Billing $ (#5)"?: number | null
+          "Billing $ (#6)"?: number | null
+          "Billing $ (#7)"?: number | null
+          "Billing $ (#8)"?: number | null
+          "Billing $ (#9)"?: number | null
+          "Mkt $"?: number | null
+          "Mkt $ (#1)"?: number | null
+          "Mkt $ (#10)"?: number | null
+          "Mkt $ (#11)"?: number | null
+          "Mkt $ (#12)"?: number | null
+          "Mkt $ (#13)"?: number | null
+          "Mkt $ (#14)"?: number | null
+          "Mkt $ (#15)"?: number | null
+          "Mkt $ (#16)"?: number | null
+          "Mkt $ (#17)"?: number | null
+          "Mkt $ (#18)"?: number | null
+          "Mkt $ (#19)"?: number | null
+          "Mkt $ (#2)"?: number | null
+          "Mkt $ (#20)"?: number | null
+          "Mkt $ (#21)"?: number | null
+          "Mkt $ (#22)"?: number | null
+          "Mkt $ (#23)"?: number | null
+          "Mkt $ (#24)"?: number | null
+          "Mkt $ (#25)"?: number | null
+          "Mkt $ (#3)"?: number | null
+          "Mkt $ (#4)"?: number | null
+          "Mkt $ (#5)"?: number | null
+          "Mkt $ (#6)"?: number | null
+          "Mkt $ (#7)"?: number | null
+          "Mkt $ (#8)"?: number | null
+          "Mkt $ (#9)"?: number | null
+          "Rep %"?: number | null
+          "Rep % (#1)"?: number | null
+          "Rep % (#10)"?: number | null
+          "Rep % (#11)"?: number | null
+          "Rep % (#12)"?: number | null
+          "Rep % (#13)"?: number | null
+          "Rep % (#14)"?: number | null
+          "Rep % (#15)"?: number | null
+          "Rep % (#16)"?: number | null
+          "Rep % (#17)"?: number | null
+          "Rep % (#18)"?: number | null
+          "Rep % (#19)"?: number | null
+          "Rep % (#2)"?: number | null
+          "Rep % (#20)"?: number | null
+          "Rep % (#21)"?: number | null
+          "Rep % (#22)"?: number | null
+          "Rep % (#23)"?: number | null
+          "Rep % (#24)"?: number | null
+          "Rep % (#25)"?: number | null
+          "Rep % (#3)"?: number | null
+          "Rep % (#4)"?: number | null
+          "Rep % (#5)"?: number | null
+          "Rep % (#6)"?: number | null
+          "Rep % (#7)"?: number | null
+          "Rep % (#8)"?: number | null
+          "Rep % (#9)"?: number | null
+        }
+        Relationships: []
+      }
       test_data_combined: {
         Row: {
           Access: string | null
