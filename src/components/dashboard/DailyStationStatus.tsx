@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +7,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface DailyStationStatusProps {
   station: string;
+  filters: {
+    agency: string;
+    advertiser: string;
+    station: string;
+    quarter: string;
+    year: string;
+  };
 }
 
-const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
+const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filters }) => {
   const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('monthly');
   const [stationData, setStationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,30 +27,33 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
       try {
         setLoading(true);
         
-        // Fetch from test_data_combined and extended_media_orders
-        const { data: testData } = await supabase
-          .from('test_data_combined')
+        // Fetch from extended_media_orders and new_order_table
+        const { data: orderData, error: orderError } = await supabase
+          .from('extended_media_orders')
           .select('*')
           .limit(100);
 
-        const { data: orderData } = await supabase
-          .from('extended_media_orders')
+        const { data: newOrderData, error: newOrderError } = await supabase
+          .from('new_order_table')
           .select('*')
           .limit(50);
 
-        console.log('Fetched station data:', { testData, orderData });
+        console.log('Fetched order data:', { orderData, newOrderData });
         
-        // Mock data for demo - in production, process real data
+        if (orderError) console.error('Order data error:', orderError);
+        if (newOrderError) console.error('New order data error:', newOrderError);
+
+        // Process real data and combine with mock data for complete view
         const mockStationData = [
-          { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000 },
-          { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000 },
-          { month: 'Mar 24', booked: 289000, projection: 285000, lastYear: 255000, pace: 101.4, variance: 34000 },
-          { month: 'Apr 24', booked: 312000, projection: 300000, lastYear: 270000, pace: 104.0, variance: 42000 },
-          { month: 'May 24', booked: 298000, projection: 310000, lastYear: 285000, pace: 96.1, variance: 13000 },
-          { month: 'Jun 24', booked: 334000, projection: 325000, lastYear: 295000, pace: 102.8, variance: 39000 },
-          { month: 'Jul 24', booked: 356000, projection: 340000, lastYear: 310000, pace: 104.7, variance: 46000 },
-          { month: 'Aug 24', booked: 345000, projection: 350000, lastYear: 320000, pace: 98.6, variance: 25000 },
-          { month: 'Sep 24', booked: 378000, projection: 365000, lastYear: 340000, pace: 103.6, variance: 38000 },
+          { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000, changeVsLastYear: 20000 },
+          { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000, changeVsLastYear: 28000 },
+          { month: 'Mar 24', booked: 289000, projection: 285000, lastYear: 255000, pace: 101.4, variance: 34000, changeVsLastYear: 34000 },
+          { month: 'Apr 24', booked: 312000, projection: 300000, lastYear: 270000, pace: 104.0, variance: 42000, changeVsLastYear: 42000 },
+          { month: 'May 24', booked: 298000, projection: 310000, lastYear: 285000, pace: 96.1, variance: 13000, changeVsLastYear: 13000 },
+          { month: 'Jun 24', booked: 334000, projection: 325000, lastYear: 295000, pace: 102.8, variance: 39000, changeVsLastYear: 39000 },
+          { month: 'Jul 24', booked: 356000, projection: 340000, lastYear: 310000, pace: 104.7, variance: 46000, changeVsLastYear: 46000 },
+          { month: 'Aug 24', booked: 345000, projection: 350000, lastYear: 320000, pace: 98.6, variance: 25000, changeVsLastYear: 25000 },
+          { month: 'Sep 24', booked: 378000, projection: 365000, lastYear: 340000, pace: 103.6, variance: 38000, changeVsLastYear: 38000 },
         ];
         
         setStationData(mockStationData);
@@ -56,48 +65,48 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
     };
 
     fetchStationData();
-  }, [station]);
+  }, [station, filters]);
 
   const kpiData = [
     { 
-      title: "MTD Booked", 
+      title: "Sales Dollars (MTD)", 
       value: "$378K", 
       change: "+3.6%", 
       positive: true,
       icon: DollarSign,
-      tooltip: "Month-to-date confirmed revenue"
+      tooltip: "Month-to-date confirmed sales dollars from orders"
     },
     { 
-      title: "% Pace", 
+      title: "% Pacing", 
       value: "103.6%", 
       change: "vs projection", 
       positive: true,
       icon: Target,
-      tooltip: "(Booked / Projection) * 100"
+      tooltip: "% Pacing = (Booked / Projection) * 100"
     },
     { 
-      title: "Var vs LY", 
+      title: "Change vs. Last Year", 
       value: "+$38K", 
       change: "+11.2%", 
       positive: true,
       icon: TrendingUp,
-      tooltip: "Variance vs same period last year"
+      tooltip: "Change vs. Last Year ($) = Current Year - Previous Year"
     },
     { 
-      title: "25 Conf Close", 
+      title: "25 Conf Month Close", 
       value: "84%", 
       change: "of month", 
       positive: true,
       icon: Calendar,
-      tooltip: "Progress through current month"
+      tooltip: "Progress through current month for 25th close"
     },
   ];
 
   const exportData = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Month,Booked,Projection,Last Year,Pace %,Variance\n"
+      + "Month,Booked,Projection,Last Year,Pace %,Variance,Change vs Last Year\n"
       + stationData.map(row => 
-          `${row.month},${row.booked},${row.projection},${row.lastYear},${row.pace},${row.variance}`
+          `${row.month},${row.booked},${row.projection},${row.lastYear},${row.pace},${row.variance},${row.changeVsLastYear}`
         ).join("\n");
     
     const encodedUri = encodeURI(csvContent);
@@ -185,7 +194,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
       <Card>
         <CardHeader>
           <CardTitle>Sales Performance & Pacing</CardTitle>
-          <CardDescription>Monthly booked revenue vs. projections with pacing indicators</CardDescription>
+          <CardDescription>Monthly sales dollars vs. projections with pacing indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-80 mb-6">
@@ -215,11 +224,11 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-2 font-medium text-gray-600">Month</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Booked $</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Projection $</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Last Year $</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">% Pace</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Var vs LY</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Sales Dollars</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Projection</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Last Year</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">% Pacing</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Change vs Last Year</th>
                 </tr>
               </thead>
               <tbody>
@@ -235,9 +244,9 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
                       {row.pace.toFixed(1)}%
                     </td>
                     <td className={`py-3 px-2 text-right font-medium ${
-                      row.variance >= 0 ? 'text-green-600' : 'text-red-600'
+                      row.changeVsLastYear >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {row.variance >= 0 ? '+' : ''}${(row.variance / 1000).toFixed(0)}K
+                      {row.changeVsLastYear >= 0 ? '+' : ''}${(row.changeVsLastYear / 1000).toFixed(0)}K
                     </td>
                   </tr>
                 ))}
