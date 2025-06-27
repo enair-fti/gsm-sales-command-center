@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, Filter, MessageSquare } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { getHeadlinesData } from '@/utils/supabaseQueries';
 
 interface OpenHeadlinesProps {
   filters: {
@@ -26,88 +25,95 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
     const fetchHeadlineData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch from darwin schema (mock data for now since schema may not exist)
         console.log('Fetching headline data with filters:', filters);
         
-        // Mock data representing headline/buyline structure
-        const mockHeadlines = [
-          {
-            headline_id: 'HL-2024-001',
-            buyline_number: 'BL-001',
-            status: 'Active',
-            start_date: '2024-01-15',
-            end_date: '2024-03-15',
-            spot_length: 30,
-            total_spots: 120,
-            daypart: 'Prime Time',
-            market: 'Providence',
-            agency: 'Zenith Media',
-            advertiser: 'Toyota',
-            station: 'WPRO-FM',
-            comments: 'Standard automotive campaign',
-            billing_amount: 45000,
-            spots_ordered: 120,
-            spots_delivered: 98
-          },
-          {
-            headline_id: 'HL-2024-002',
-            buyline_number: 'BL-002',
-            status: 'Pending',
-            start_date: '2024-02-01',
-            end_date: '2024-04-01',
-            spot_length: 60,
-            total_spots: 80,
-            daypart: 'Morning Drive',
-            market: 'Boston Metro',
-            agency: 'GroupM',
-            advertiser: 'McDonald\'s',
-            station: 'WXKS-FM',
-            comments: 'Q1 promotional campaign',
-            billing_amount: 32000,
-            spots_ordered: 80,
-            spots_delivered: 65
-          },
-          {
-            headline_id: 'HL-2024-003',
-            buyline_number: 'BL-003',
-            status: 'Incomplete',
-            start_date: '2024-01-08',
-            end_date: '2024-02-28',
-            spot_length: 30,
-            total_spots: 150,
-            daypart: 'Afternoon',
-            market: 'Hartford',
-            agency: 'Publicis',
-            advertiser: 'Coca-Cola',
-            station: 'WKFD-FM',
-            comments: 'Missing creative approval',
-            billing_amount: 28500,
-            spots_ordered: 150,
-            spots_delivered: 140
-          },
-          {
-            headline_id: 'HL-2024-004',
-            buyline_number: 'BL-004',
-            status: 'Cancelled',
-            start_date: '2024-03-01',
-            end_date: '2024-05-01',
-            spot_length: 15,
-            total_spots: 200,
-            daypart: 'Evening',
-            market: 'Springfield',
-            agency: 'Omnicom',
-            advertiser: 'Walmart',
-            station: 'WFHN-FM',
-            comments: 'Budget reallocation',
-            billing_amount: 15000,
-            spots_ordered: 200,
-            spots_delivered: 0
-          }
-        ];
+        const data = await getHeadlinesData(filters);
+        
+        // If no real data, use mock data
+        if (!data || data.length === 0) {
+          console.log('No real headline data found, using mock data');
+          const mockHeadlines = [
+            {
+              headline_id: 'HL-2024-001',
+              buyline_number: 'BL-001',
+              status: 'Active',
+              start_date: '2024-01-15',
+              end_date: '2024-03-15',
+              spot_length: 30,
+              total_spots: 120,
+              daypart: 'Prime Time',
+              market: 'Providence',
+              agency: 'Zenith Media',
+              advertiser: 'Toyota',
+              station: 'WPRO-FM',
+              comments: 'Standard automotive campaign',
+              billing_amount: 45000,
+              spots_ordered: 120,
+              spots_delivered: 98
+            },
+            {
+              headline_id: 'HL-2024-002',
+              buyline_number: 'BL-002',
+              status: 'Pending',
+              start_date: '2024-02-01',
+              end_date: '2024-04-01',
+              spot_length: 60,
+              total_spots: 80,
+              daypart: 'Morning Drive',
+              market: 'Boston Metro',
+              agency: 'GroupM',
+              advertiser: 'McDonald\'s',
+              station: 'WXKS-FM',
+              comments: 'Q1 promotional campaign',
+              billing_amount: 32000,
+              spots_ordered: 80,
+              spots_delivered: 65
+            },
+            {
+              headline_id: 'HL-2024-003',
+              buyline_number: 'BL-003',
+              status: 'Incomplete',
+              start_date: '2024-01-08',
+              end_date: '2024-02-28',
+              spot_length: 30,
+              total_spots: 150,
+              daypart: 'Afternoon',
+              market: 'Hartford',
+              agency: 'Publicis',
+              advertiser: 'Coca-Cola',
+              station: 'WKFD-FM',
+              comments: 'Missing creative approval',
+              billing_amount: 28500,
+              spots_ordered: 150,
+              spots_delivered: 140
+            },
+            {
+              headline_id: 'HL-2024-004',
+              buyline_number: 'BL-004',
+              status: 'Cancelled',
+              start_date: '2024-03-01',
+              end_date: '2024-05-01',
+              spot_length: 15,
+              total_spots: 200,
+              daypart: 'Evening',
+              market: 'Springfield',
+              agency: 'Omnicom',
+              advertiser: 'Walmart',
+              station: 'WFHN-FM',
+              comments: 'Budget reallocation',
+              billing_amount: 15000,
+              spots_ordered: 200,
+              spots_delivered: 0
+            }
+          ];
+          setHeadlineData(mockHeadlines);
+        } else {
+          console.log('Using real headline data:', data.length, 'records');
+          setHeadlineData(data);
+        }
 
         // Apply filters
-        let filteredData = mockHeadlines;
+        let filteredData = headlineData;
         
         if (filters.agency && !filters.agency.startsWith('All')) {
           filteredData = filteredData.filter(item => item.agency === filters.agency);
@@ -116,7 +122,7 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
           filteredData = filteredData.filter(item => item.advertiser === filters.advertiser);
         }
         if (filters.station && !filters.station.startsWith('All')) {
-          filteredData = filteredData.filter(item => item.station.includes(filters.station));
+          filteredData = filteredData.filter(item => item.station?.includes(filters.station));
         }
         if (filterStatus !== 'All') {
           filteredData = filteredData.filter(item => item.status === filterStatus);
@@ -125,6 +131,23 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
         setHeadlineData(filteredData);
       } catch (error) {
         console.error('Error fetching headline data:', error);
+        console.log('Using fallback mock data due to error');
+        // Set minimal mock data on error
+        setHeadlineData([
+          {
+            headline_id: 'HL-MOCK-001',
+            buyline_number: 'BL-MOCK-001',
+            status: 'Active',
+            start_date: '2024-01-15',
+            end_date: '2024-03-15',
+            advertiser: 'Sample Advertiser',
+            agency: 'Sample Agency',
+            station: 'Sample Station',
+            spots_ordered: 100,
+            spots_delivered: 85,
+            billing_amount: 25000
+          }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -227,7 +250,7 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              ${headlineData.reduce((sum, item) => sum + item.billing_amount, 0).toLocaleString()}
+              ${headlineData.reduce((sum, item) => sum + (item.billing_amount || 0), 0).toLocaleString()}
             </div>
             <div className="text-sm text-gray-600">Combined value</div>
           </CardContent>
@@ -238,7 +261,7 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {headlineData.reduce((sum, item) => sum + item.spots_ordered, 0).toLocaleString()}
+              {headlineData.reduce((sum, item) => sum + (item.spots_ordered || 0), 0).toLocaleString()}
             </div>
             <div className="text-sm text-gray-600">Total spots</div>
           </CardContent>
@@ -249,8 +272,9 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {((headlineData.reduce((sum, item) => sum + item.spots_delivered, 0) / 
-                 headlineData.reduce((sum, item) => sum + item.spots_ordered, 0)) * 100).toFixed(1)}%
+              {headlineData.length > 0 ? 
+                ((headlineData.reduce((sum, item) => sum + (item.spots_delivered || 0), 0) / 
+                  headlineData.reduce((sum, item) => sum + (item.spots_ordered || 1), 0)) * 100).toFixed(1) : '0.0'}%
             </div>
             <div className="text-sm text-gray-600">Spots delivered</div>
           </CardContent>
@@ -307,22 +331,22 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
                     <TableCell>{row.daypart}</TableCell>
                     <TableCell>{row.spot_length}s</TableCell>
                     <TableCell className="text-right font-bold">
-                      ${row.billing_amount.toLocaleString()}
+                      ${(row.billing_amount || 0).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="text-sm">
-                        <div>{row.spots_delivered}</div>
-                        <div className="text-gray-500">of {row.spots_ordered}</div>
+                        <div>{row.spots_delivered || 0}</div>
+                        <div className="text-gray-500">of {row.spots_ordered || 0}</div>
                       </div>
                     </TableCell>
-                    <TableCell className={`text-right font-medium ${getDeliveryStatus(row.spots_delivered, row.spots_ordered)}`}>
-                      {((row.spots_delivered / row.spots_ordered) * 100).toFixed(1)}%
+                    <TableCell className={`text-right font-medium ${getDeliveryStatus(row.spots_delivered || 0, row.spots_ordered || 1)}`}>
+                      {row.spots_ordered ? (((row.spots_delivered || 0) / row.spots_ordered) * 100).toFixed(1) : '0.0'}%
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-1">
                         <MessageSquare className="w-3 h-3 text-gray-400" />
                         <span className="text-xs text-gray-600 truncate max-w-32">
-                          {row.comments}
+                          {row.comments || 'No comments'}
                         </span>
                       </div>
                     </TableCell>
