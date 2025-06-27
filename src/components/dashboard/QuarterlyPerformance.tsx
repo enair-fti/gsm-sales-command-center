@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, Target, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -104,6 +105,13 @@ const QuarterlyPerformance: React.FC<QuarterlyPerformanceProps> = ({ station, fi
   const totalMarketBilling = performanceData.reduce((sum, item) => sum + item.marketBilling, 0);
   const avgRepPercent = (totalBillingShare / totalMarketBilling) * 100;
   const currentQuarter = performanceData[performanceData.length - 1];
+
+  // Helper function to get color based on rep percent
+  const getBarColor = (repPercent: number) => {
+    if (repPercent >= 20) return '#10b981'; // green
+    if (repPercent >= 15) return '#f59e0b'; // yellow
+    return '#ef4444'; // red
+  };
 
   return (
     <div className="h-full overflow-auto space-y-6">
@@ -218,10 +226,11 @@ const QuarterlyPerformance: React.FC<QuarterlyPerformanceProps> = ({ station, fi
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="quarter" />
                 <YAxis tickFormatter={(value) => `${value}%`} />
-                <Bar 
-                  dataKey="repPercent" 
-                  fill={(data) => data >= 20 ? '#10b981' : data >= 15 ? '#f59e0b' : '#ef4444'}
-                />
+                <Bar dataKey="repPercent">
+                  {performanceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getBarColor(entry.repPercent)} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
