@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +7,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface DailyDeclinersAddersProps {
   station: string;
+  filters: {
+    agency: string;
+    advertiser: string;
+    station: string;
+    quarter: string;
+    year: string;
+  };
 }
 
-const DailyDeclinersAdders: React.FC<DailyDeclinersAddersProps> = ({ station }) => {
+const DailyDeclinersAdders: React.FC<DailyDeclinersAddersProps> = ({ station, filters }) => {
   const [decliners, setDecliners] = useState<any[]>([]);
   const [adders, setAdders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,7 +141,7 @@ const DailyDeclinersAdders: React.FC<DailyDeclinersAddersProps> = ({ station }) 
     };
 
     fetchOrderChanges();
-  }, [station]);
+  }, [station, filters]);
 
   const exportDecliners = () => {
     const csvContent = "data:text/csv;charset=utf-8," 

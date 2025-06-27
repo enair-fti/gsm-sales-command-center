@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +5,16 @@ import { ChevronUp, ChevronDown, Filter } from 'lucide-react';
 
 interface MonthlyProjectionsProps {
   station: string;
+  filters: {
+    agency: string;
+    advertiser: string;
+    station: string;
+    quarter: string;
+    year: string;
+  };
 }
 
-const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station }) => {
+const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filters }) => {
   const [sortField, setSortField] = useState<'billing' | 'projected' | 'market'>('billing');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterMarket, setFilterMarket] = useState<string>('All');
