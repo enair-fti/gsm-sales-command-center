@@ -15,17 +15,17 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Sales Enablement Dashboard</h1>
-            <p className="text-sm text-gray-600">Real-time broadcast media analytics for General Sales Managers</p>
+            <p className="text-sm text-gray-600">Professional broadcast media analytics for General Sales Managers</p>
           </div>
           <div className="flex items-center space-x-4">
             <select 
               value={selectedStation}
               onChange={(e) => setSelectedStation(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option>All Stations</option>
               <option>Providence</option>
@@ -45,38 +45,48 @@ const Index = () => {
         {/* Main Dashboard Content */}
         <div className="flex-1 p-6">
           <Tabs defaultValue="daily-status" className="h-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
-              <TabsTrigger value="daily-status">Daily Status</TabsTrigger>
-              <TabsTrigger value="monthly-projections">Monthly Projections</TabsTrigger>
-              <TabsTrigger value="decliners-adders">Decliners/Adders</TabsTrigger>
-              <TabsTrigger value="top-advertisers">Top 100 Advertisers</TabsTrigger>
-              <TabsTrigger value="quarterly-performance">Quarterly Performance</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 mb-6 bg-white border border-gray-200">
+              <TabsTrigger value="daily-status" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Daily Status
+              </TabsTrigger>
+              <TabsTrigger value="top-advertisers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Top 100 Advertisers
+              </TabsTrigger>
+              <TabsTrigger value="decliners-adders" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Decliners/Adders
+              </TabsTrigger>
+              <TabsTrigger value="quarterly-performance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Quarterly Performance
+              </TabsTrigger>
+              <TabsTrigger value="monthly-projections" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Monthly Projections
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="daily-status" className="h-[calc(100%-60px)]">
               <DailyStationStatus station={selectedStation} />
             </TabsContent>
             
-            <TabsContent value="monthly-projections" className="h-[calc(100%-60px)]">
-              <MonthlyProjections station={selectedStation} />
+            <TabsContent value="top-advertisers" className="h-[calc(100%-60px)]">
+              <TopAdvertisers station={selectedStation} />
             </TabsContent>
             
             <TabsContent value="decliners-adders" className="h-[calc(100%-60px)]">
               <DailyDeclinersAdders station={selectedStation} />
             </TabsContent>
             
-            <TabsContent value="top-advertisers" className="h-[calc(100%-60px)]">
-              <TopAdvertisers station={selectedStation} />
-            </TabsContent>
-            
             <TabsContent value="quarterly-performance" className="h-[calc(100%-60px)]">
               <QuarterlyPerformance station={selectedStation} />
+            </TabsContent>
+            
+            <TabsContent value="monthly-projections" className="h-[calc(100%-60px)]">
+              <MonthlyProjections station={selectedStation} />
             </TabsContent>
           </Tabs>
         </div>
 
         {/* AI Chatbot Panel */}
-        <div className="w-80 bg-white border-l border-gray-200">
+        <div className="w-80 bg-white border-l border-gray-200 shadow-sm">
           <AIChatbot />
         </div>
       </div>

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Calendar, TrendingUp, DollarSign, Target } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
+import { Calendar, TrendingUp, DollarSign, Target, Download } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DailyStationStatusProps {
   station: string;
@@ -10,115 +12,114 @@ interface DailyStationStatusProps {
 
 const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
   const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('monthly');
+  const [stationData, setStationData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sales Performance Report (13-Month View)
-  const salesPerformanceData = [
-    { month: 'Jan 23', booked: 245000, pending: 38000, finalized: 207000, projection: 260000, yoyChange: 8.5 },
-    { month: 'Feb 23', booked: 268000, pending: 42000, finalized: 226000, projection: 275000, yoyChange: 12.3 },
-    { month: 'Mar 23', booked: 289000, pending: 45000, finalized: 244000, projection: 285000, yoyChange: 15.2 },
-    { month: 'Apr 23', booked: 312000, pending: 48000, finalized: 264000, projection: 300000, yoyChange: 18.7 },
-    { month: 'May 23', booked: 298000, pending: 38000, finalized: 260000, projection: 310000, yoyChange: 14.1 },
-    { month: 'Jun 23', booked: 334000, pending: 52000, finalized: 282000, projection: 325000, yoyChange: 22.8 },
-    { month: 'Jul 23', booked: 356000, pending: 58000, finalized: 298000, projection: 340000, yoyChange: 19.6 },
-    { month: 'Aug 23', booked: 345000, pending: 48000, finalized: 297000, projection: 350000, yoyChange: 16.4 },
-    { month: 'Sep 23', booked: 378000, pending: 62000, finalized: 316000, projection: 365000, yoyChange: 24.2 },
-    { month: 'Oct 23', booked: 398000, pending: 65000, finalized: 333000, projection: 380000, yoyChange: 28.1 },
-    { month: 'Nov 23', booked: 425000, pending: 72000, finalized: 353000, projection: 410000, yoyChange: 31.5 },
-    { month: 'Dec 23', booked: 456000, pending: 68000, finalized: 388000, projection: 445000, yoyChange: 26.8 },
-    { month: 'Jan 24', booked: 267000, pending: 41000, finalized: 226000, projection: 282000, yoyChange: 8.9 },
-  ];
+  // Fetch station performance data
+  useEffect(() => {
+    const fetchStationData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch from test_data_combined and extended_media_orders
+        const { data: testData } = await supabase
+          .from('test_data_combined')
+          .select('*')
+          .limit(100);
 
-  // End-of-Day Booking Extract
-  const bookingExtractData = [
-    {
-      station: 'WPRO-FM',
-      agency: 'MediaCom',
-      advertiser: 'AutoNation',
-      buyerName: 'Sarah Johnson',
-      affiliation: 'GroupM',
-      ownership: 'WPP',
-      office: 'Boston',
-      aeName: 'Mike Sullivan',
-      stationShare: 15.2,
-      current: 8400,
-      previous: 7200,
-      difference: 1200,
-      market: 125000
-    },
-    {
-      station: 'WBRU-FM',
-      agency: 'Havas Media',
-      advertiser: 'Regional Medical',
-      buyerName: 'Tom Chen',
-      affiliation: 'Havas Group',
-      ownership: 'Vivendi',
-      office: 'Providence',
-      aeName: 'Lisa Rodriguez',
-      stationShare: 12.8,
-      current: 6200,
-      previous: 5800,
-      difference: 400,
-      market: 98000
-    },
-    {
-      station: 'WKFD-FM',
-      agency: 'Zenith Media',
-      advertiser: 'Premier Real Estate',
-      buyerName: 'Amy Davis',
-      affiliation: 'Publicis',
-      ownership: 'Publicis Groupe',
-      office: 'Hartford',
-      aeName: 'James Wilson',
-      stationShare: 18.5,
-      current: 5800,
-      previous: 6200,
-      difference: -400,
-      market: 87000
-    }
-  ];
+        const { data: orderData } = await supabase
+          .from('extended_media_orders')
+          .select('*')
+          .limit(50);
+
+        console.log('Fetched station data:', { testData, orderData });
+        
+        // Mock data for demo - in production, process real data
+        const mockStationData = [
+          { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000 },
+          { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000 },
+          { month: 'Mar 24', booked: 289000, projection: 285000, lastYear: 255000, pace: 101.4, variance: 34000 },
+          { month: 'Apr 24', booked: 312000, projection: 300000, lastYear: 270000, pace: 104.0, variance: 42000 },
+          { month: 'May 24', booked: 298000, projection: 310000, lastYear: 285000, pace: 96.1, variance: 13000 },
+          { month: 'Jun 24', booked: 334000, projection: 325000, lastYear: 295000, pace: 102.8, variance: 39000 },
+          { month: 'Jul 24', booked: 356000, projection: 340000, lastYear: 310000, pace: 104.7, variance: 46000 },
+          { month: 'Aug 24', booked: 345000, projection: 350000, lastYear: 320000, pace: 98.6, variance: 25000 },
+          { month: 'Sep 24', booked: 378000, projection: 365000, lastYear: 340000, pace: 103.6, variance: 38000 },
+        ];
+        
+        setStationData(mockStationData);
+      } catch (error) {
+        console.error('Error fetching station data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStationData();
+  }, [station]);
 
   const kpiData = [
     { 
-      title: "Booked Revenue", 
-      value: "$267,000", 
-      change: "+8.9%", 
+      title: "MTD Booked", 
+      value: "$378K", 
+      change: "+3.6%", 
       positive: true,
       icon: DollarSign,
-      tooltip: "Total confirmed revenue for current period"
+      tooltip: "Month-to-date confirmed revenue"
     },
     { 
-      title: "Pacing %", 
-      value: "94.7%", 
+      title: "% Pace", 
+      value: "103.6%", 
       change: "vs projection", 
-      positive: false,
-      icon: Target,
-      tooltip: "Booked Revenue / Projection Target"
-    },
-    { 
-      title: "Pending Orders", 
-      value: "$41,000", 
-      change: "+$3K", 
       positive: true,
-      icon: Calendar,
-      tooltip: "Revenue pending finalization"
+      icon: Target,
+      tooltip: "(Booked / Projection) * 100"
     },
     { 
-      title: "YoY Growth", 
-      value: "+8.9%", 
-      change: "vs Jan 23", 
+      title: "Var vs LY", 
+      value: "+$38K", 
+      change: "+11.2%", 
       positive: true,
       icon: TrendingUp,
-      tooltip: "Year-over-year growth comparison"
+      tooltip: "Variance vs same period last year"
+    },
+    { 
+      title: "25 Conf Close", 
+      value: "84%", 
+      change: "of month", 
+      positive: true,
+      icon: Calendar,
+      tooltip: "Progress through current month"
     },
   ];
 
-  const calculatePacing = (booked: number, projection: number) => {
-    return ((booked / projection) * 100).toFixed(1);
+  const exportData = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Month,Booked,Projection,Last Year,Pace %,Variance\n"
+      + stationData.map(row => 
+          `${row.month},${row.booked},${row.projection},${row.lastYear},${row.pace},${row.variance}`
+        ).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `station_performance_${station.replace(' ', '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading station data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-auto space-y-6">
-      {/* View Toggle */}
+      {/* Header with Controls */}
       <div className="flex items-center justify-between">
         <div className="flex space-x-2">
           <button
@@ -129,7 +130,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            13-Month Trend
+            Monthly View
           </button>
           <button
             onClick={() => setViewMode('daily')}
@@ -142,15 +143,24 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
             Daily View
           </button>
         </div>
-        <Badge variant="outline" className="text-sm">
-          Station: {station}
-        </Badge>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={exportData}
+            className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export</span>
+          </button>
+          <Badge variant="outline" className="text-sm">
+            Station: {station}
+          </Badge>
+        </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
         {kpiData.map((kpi, index) => (
-          <Card key={index} className="relative group cursor-help">
+          <Card key={index} className="relative group cursor-help hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">{kpi.title}</CardTitle>
@@ -159,7 +169,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{kpi.value}</div>
-              <div className={`text-sm ${kpi.positive ? 'text-green-600' : 'text-orange-600'}`}>
+              <div className={`text-sm ${kpi.positive ? 'text-green-600' : 'text-red-600'}`}>
                 {kpi.change}
               </div>
               {/* Tooltip */}
@@ -171,128 +181,71 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station }) => {
         ))}
       </div>
 
-      {viewMode === 'monthly' ? (
-        /* Sales Performance Report (13-Month View) */
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Performance Report (13-Month Trend)</CardTitle>
-            <CardDescription>Booked vs Projected Revenue with YoY Growth</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" angle={-45} textAnchor="end" height={60} />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip 
-                    formatter={(value, name) => {
-                      if (name === 'yoyChange') return [`${value}%`, 'YoY Change'];
-                      return [`$${value?.toLocaleString()}`, name];
-                    }}
-                  />
-                  <Bar yAxisId="left" dataKey="booked" fill="#22c55e" name="Booked" />
-                  <Bar yAxisId="left" dataKey="pending" fill="#f59e0b" name="Pending" />
-                  <Line yAxisId="right" type="monotone" dataKey="yoyChange" stroke="#ef4444" strokeWidth={3} name="YoY Change %" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+      {/* Performance Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sales Performance & Pacing</CardTitle>
+          <CardDescription>Monthly booked revenue vs. projections with pacing indicators</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 mb-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={stationData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis yAxisId="left" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`} />
+                <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value.toFixed(1)}%`} />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'pace') return [`${value}%`, 'Pace %'];
+                    return [`$${(Number(value) / 1000).toFixed(0)}K`, name];
+                  }}
+                />
+                <Bar yAxisId="left" dataKey="projection" fill="#e5e7eb" name="Projection" />
+                <Bar yAxisId="left" dataKey="booked" fill="#3b82f6" name="Booked" />
+                <Bar yAxisId="left" dataKey="lastYear" fill="#94a3b8" name="Last Year" />
+                <Line yAxisId="right" type="monotone" dataKey="pace" stroke="#ef4444" strokeWidth={3} name="Pace %" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
 
-            {/* Performance Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 font-medium text-gray-600">Month</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Booked</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Pending</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Finalized</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Projection</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Pacing %</th>
-                    <th className="text-right py-2 font-medium text-gray-600">YoY Change</th>
+          {/* Performance Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-2 font-medium text-gray-600">Month</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Booked $</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Projection $</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Last Year $</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">% Pace</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Var vs LY</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stationData.map((row, index) => (
+                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-2 font-medium">{row.month}</td>
+                    <td className="py-3 px-2 text-right font-bold">${(row.booked / 1000).toFixed(0)}K</td>
+                    <td className="py-3 px-2 text-right text-blue-600">${(row.projection / 1000).toFixed(0)}K</td>
+                    <td className="py-3 px-2 text-right text-gray-600">${(row.lastYear / 1000).toFixed(0)}K</td>
+                    <td className={`py-3 px-2 text-right font-medium ${
+                      row.pace >= 100 ? 'text-green-600' : row.pace >= 95 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {row.pace.toFixed(1)}%
+                    </td>
+                    <td className={`py-3 px-2 text-right font-medium ${
+                      row.variance >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {row.variance >= 0 ? '+' : ''}${(row.variance / 1000).toFixed(0)}K
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {salesPerformanceData.slice(-6).map((row, index) => (
-                    <tr key={index} className="border-b border-gray-100">
-                      <td className="py-2 font-medium">{row.month}</td>
-                      <td className="py-2 text-right">${row.booked.toLocaleString()}</td>
-                      <td className="py-2 text-right text-orange-600">${row.pending.toLocaleString()}</td>
-                      <td className="py-2 text-right text-green-600">${row.finalized.toLocaleString()}</td>
-                      <td className="py-2 text-right text-blue-600">${row.projection.toLocaleString()}</td>
-                      <td className={`py-2 text-right font-medium ${
-                        parseFloat(calculatePacing(row.booked, row.projection)) >= 100 ? 'text-green-600' : 'text-orange-600'
-                      }`}>
-                        {calculatePacing(row.booked, row.projection)}%
-                      </td>
-                      <td className={`py-2 text-right font-medium ${
-                        row.yoyChange >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {row.yoyChange >= 0 ? '+' : ''}{row.yoyChange}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        /* End-of-Day Booking Extract */
-        <Card>
-          <CardHeader>
-            <CardTitle>End-of-Day Booking Extract</CardTitle>
-            <CardDescription>Daily booking activity by station, agency, and advertiser</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 font-medium text-gray-600">Station</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Agency</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Advertiser</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Buyer/Affiliation</th>
-                    <th className="text-left py-2 font-medium text-gray-600">Office/AE</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Share %</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Current $</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Previous $</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Difference</th>
-                    <th className="text-right py-2 font-medium text-gray-600">Market $</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookingExtractData.map((row, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 font-medium">{row.station}</td>
-                      <td className="py-3">{row.agency}</td>
-                      <td className="py-3 font-medium text-blue-600">{row.advertiser}</td>
-                      <td className="py-3">
-                        <div>{row.buyerName}</div>
-                        <div className="text-xs text-gray-500">{row.affiliation}</div>
-                      </td>
-                      <td className="py-3">
-                        <div>{row.office}</div>
-                        <div className="text-xs text-gray-500">{row.aeName}</div>
-                      </td>
-                      <td className="py-3 text-right font-medium">{row.stationShare}%</td>
-                      <td className="py-3 text-right font-bold">${row.current.toLocaleString()}</td>
-                      <td className="py-3 text-right text-gray-600">${row.previous.toLocaleString()}</td>
-                      <td className={`py-3 text-right font-medium ${
-                        row.difference >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {row.difference >= 0 ? '+' : ''}${row.difference.toLocaleString()}
-                      </td>
-                      <td className="py-3 text-right text-blue-600 font-medium">${row.market.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

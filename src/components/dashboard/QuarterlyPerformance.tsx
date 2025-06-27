@@ -1,180 +1,338 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
+import { Download, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuarterlyPerformanceProps {
   station: string;
 }
 
 const QuarterlyPerformance: React.FC<QuarterlyPerformanceProps> = ({ station }) => {
-  const quarterlyData = [
-    { quarter: 'Q1 2023', revenue: 2400000, goal: 2200000, yoy: 8.5 },
-    { quarter: 'Q2 2023', revenue: 2650000, goal: 2400000, yoy: 12.3 },
-    { quarter: 'Q3 2023', revenue: 2800000, goal: 2600000, yoy: 15.2 },
-    { quarter: 'Q4 2023', revenue: 3100000, goal: 2900000, yoy: 18.7 },
-    { quarter: 'Q1 2024', revenue: 2750000, goal: 2600000, yoy: 14.6 },
-    { quarter: 'Q2 2024', revenue: 2950000, goal: 2750000, yoy: 11.3 },
-    { quarter: 'Q3 2024', revenue: 3200000, goal: 3000000, yoy: 14.3 },
-    { quarter: 'Q4 2024', revenue: 2100000, goal: 3200000, yoy: 0 }, // Current quarter in progress
-  ];
+  const [viewMode, setViewMode] = useState<'quarterly' | 'monthly'>('quarterly');
+  const [filterMarket, setFilterMarket] = useState<string>('All');
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const categoryData = [
-    { name: 'Automotive', value: 25, color: '#3b82f6' },
-    { name: 'Healthcare', value: 20, color: '#10b981' },
-    { name: 'Real Estate', value: 15, color: '#8b5cf6' },
-    { name: 'Food & Dining', value: 12, color: '#f59e0b' },
-    { name: 'Retail', value: 10, color: '#ef4444' },
-    { name: 'Other', value: 18, color: '#6b7280' },
-  ];
+  useEffect(() => {
+    const fetchPerformanceData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch from darwin-extract-data and references tables
+        const { data: darwinData } = await supabase
+          .from('darwin-extract-data')
+          .select('*')
+          .limit(100);
 
-  const pacingData = [
-    { metric: "Revenue vs Goal", current: 2100000, target: 3200000, percentage: 65.6 },
-    { metric: "Spots Sold", current: 8450, target: 12000, percentage: 70.4 },
-    { metric: "New Clients", current: 23, target: 35, percentage: 65.7 },
-    { metric: "Retention Rate", current: 89, target: 85, percentage: 104.7 },
-  ];
+        const { data: stationData } = await supabase
+          .from('references_stations')
+          .select('*')
+          .limit(50);
+
+        const { data: marketData } = await supabase
+          .from('references_markets')
+          .select('*')
+          .limit(20);
+
+        console.log('Fetched performance data:', { darwinData, stationData, marketData });
+        
+        // Mock quarterly data with calculated Rep %
+        const mockQuarterlyData = [
+          { 
+            period: 'Q1 2024', 
+            billingShare: 2400000, 
+            marketBilling: 12000000, 
+            projectedBilling: 2600000,
+            projectedMarket: 13000000,
+            headlines: 156,
+            repPercent: 20.0, // (2400000 / 12000000) * 100
+            projectedShare: 20.0 // (2600000 / 13000000) * 100
+          },
+          { 
+            period: 'Q2 2024', 
+            billingShare: 2650000, 
+            marketBilling: 14200000, 
+            projectedBilling: 2800000,
+            projectedMarket: 15000000,
+            headlines: 178,
+            repPercent: 18.7,
+            projectedShare: 18.7
+          },
+          { 
+            period: 'Q3 2024', 
+            billingShare: 2800000, 
+            marketBilling: 15800000, 
+            projectedBilling: 3000000,
+            projectedMarket: 16500000,
+            headlines: 194,
+            repPercent: 17.7,
+            projectedShare: 18.2
+          },
+          { 
+            period: 'Q4 2024', 
+            billingShare: 1800000, 
+            marketBilling: 10500000, 
+            projectedBilling: 3200000,
+            projectedMarket: 17200000,
+            headlines: 125,
+            repPercent: 17.1,
+            projectedShare: 18.6
+          }
+        ];
+        
+        setPerformanceData(mockQuarterlyData);
+      } catch (error) {
+        console.error('Error fetching performance data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPerformanceData();
+  }, [station]);
+
+  const exportData = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Period,Billing Share,Market Billing,Rep %,Projected Billing,Projected Market,Projected Share %,Headlines\n"
+      + performanceData.map(row => 
+          `${row.period},${row.billingShare},${row.marketBilling},${row.repPercent},${row.projectedBilling},${row.projectedMarket},${row.projectedShare},${row.headlines}`
+        ).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "quarterly_performance.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading performance data...</div>
+      </div>
+    );
+  }
+
+  const currentPeriod = performanceData[performanceData.length - 1];
 
   return (
     <div className="h-full overflow-auto space-y-6">
+      {/* Header with Controls */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Quarterly Sales & Projections</h2>
+          <p className="text-sm text-gray-600">Market share analysis and competitive positioning</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setViewMode('quarterly')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'quarterly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Quarterly
+            </button>
+            <button
+              onClick={() => setViewMode('monthly')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Monthly
+            </button>
+          </div>
+          <button
+            onClick={exportData}
+            className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+
       {/* Summary KPIs */}
       <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Q4 Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Current Billing Share</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">$2.1M</div>
-            <div className="text-sm text-orange-600">65.6% of goal</div>
+            <div className="text-2xl font-bold text-gray-900">
+              ${(currentPeriod?.billingShare / 1000000).toFixed(1)}M
+            </div>
+            <div className="text-sm text-blue-600">Q4 2024 YTD</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">YoY Growth</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Rep %</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">+14.3%</div>
-            <div className="text-sm text-gray-500">vs Q3 2023</div>
+            <div className={`text-2xl font-bold ${
+              currentPeriod?.repPercent >= 20 ? 'text-green-600' : 
+              currentPeriod?.repPercent < 10 ? 'text-red-600' : 'text-yellow-600'
+            }`}>
+              {currentPeriod?.repPercent.toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-500">Market share</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Pacing</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Projected Share</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">$1.1M</div>
-            <div className="text-sm text-gray-500">Remaining to goal</div>
+            <div className="text-2xl font-bold text-gray-900">{currentPeriod?.projectedShare.toFixed(1)}%</div>
+            <div className="text-sm text-gray-500">End of period target</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Days Left</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Headlines</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">28</div>
-            <div className="text-sm text-gray-500">in Q4 2024</div>
+            <div className="text-2xl font-bold text-gray-900">{currentPeriod?.headlines}</div>
+            <div className="text-sm text-gray-500">Active campaigns</div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Revenue vs Goals Chart */}
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle>Revenue vs Goals Trend</CardTitle>
-            <CardDescription>Quarterly performance over the last 8 quarters</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={quarterlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="quarter" />
-                  <YAxis tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`} />
-                  <Tooltip formatter={(value, name) => [`$${(Number(value) / 1000000).toFixed(2)}M`, name === 'revenue' ? 'Actual Revenue' : 'Goal']} />
-                  <Bar dataKey="goal" fill="#e5e7eb" name="goal" />
-                  <Bar dataKey="revenue" fill="#3b82f6" name="revenue" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Revenue by Category */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue by Category</CardTitle>
-            <CardDescription>Q4 2024 breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${value}%`} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {categoryData.map((category, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded" style={{ backgroundColor: category.color }}></div>
-                    <span>{category.name}</span>
-                  </div>
-                  <span className="font-medium">{category.value}%</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Pacing Metrics */}
+      {/* Performance Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Q4 2024 Pacing Metrics</CardTitle>
-          <CardDescription>Current progress towards quarterly goals</CardDescription>
+          <CardTitle>Market Share & Billing Trends</CardTitle>
+          <CardDescription>Quarterly billing share vs market with Rep % indicators</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {pacingData.map((item, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-900">{item.metric}</span>
-                  <span className={`font-bold ${item.percentage >= 100 ? 'text-green-600' : item.percentage >= 70 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {item.percentage.toFixed(1)}%
+          <div className="h-80 mb-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={performanceData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="period" />
+                <YAxis yAxisId="left" tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`} />
+                <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value.toFixed(1)}%`} />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'repPercent' || name === 'projectedShare') return [`${value}%`, name];
+                    return [`$${(Number(value) / 1000000).toFixed(1)}M`, name];
+                  }}
+                />
+                <Bar yAxisId="left" dataKey="marketBilling" fill="#e5e7eb" name="Market Billing" />
+                <Bar yAxisId="left" dataKey="billingShare" fill="#3b82f6" name="Billing Share" />
+                <Bar yAxisId="left" dataKey="projectedBilling" fill="#93c5fd" name="Projected Billing" />
+                <Line yAxisId="right" type="monotone" dataKey="repPercent" stroke="#ef4444" strokeWidth={3} name="Rep %" />
+                <Line yAxisId="right" type="monotone" dataKey="projectedShare" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" name="Projected Share %" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Performance Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-2 font-medium text-gray-600">Period</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Billing Share</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Market Billing</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Rep %</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Projected Billing</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Projected Share %</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Headlines</th>
+                </tr>
+              </thead>
+              <tbody>
+                {performanceData.map((row, index) => (
+                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-2 font-medium">{row.period}</td>
+                    <td className="py-3 px-2 text-right font-bold">
+                      ${(row.billingShare / 1000000).toFixed(1)}M
+                    </td>
+                    <td className="py-3 px-2 text-right text-gray-600">
+                      ${(row.marketBilling / 1000000).toFixed(1)}M
+                    </td>
+                    <td className={`py-3 px-2 text-right font-medium ${
+                      row.repPercent >= 20 ? 'text-green-600' : 
+                      row.repPercent < 10 ? 'text-red-600' : 'text-yellow-600'
+                    }`}>
+                      {row.repPercent.toFixed(1)}%
+                    </td>
+                    <td className="py-3 px-2 text-right text-blue-600">
+                      ${(row.projectedBilling / 1000000).toFixed(1)}M
+                    </td>
+                    <td className="py-3 px-2 text-right text-green-600">
+                      {row.projectedShare.toFixed(1)}%
+                    </td>
+                    <td className="py-3 px-2 text-right">{row.headlines}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Market Position Analysis */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Market Position Analysis</CardTitle>
+          <CardDescription>Station competitive positioning and share trends</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-900">Share Performance</h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                  <span className="text-green-800 font-medium">Above 20% (Excellent)</span>
+                  <span className="text-green-600 font-bold">
+                    {performanceData.filter(p => p.repPercent >= 20).length} quarters
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${item.percentage >= 100 ? 'bg-green-500' : item.percentage >= 70 ? 'bg-blue-500' : 'bg-red-500'}`}
-                    style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>
-                    {item.metric === "Revenue vs Goal" ? `$${(item.current / 1000000).toFixed(1)}M` : 
-                     item.metric === "Retention Rate" ? `${item.current}%` : item.current.toLocaleString()}
+                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                  <span className="text-yellow-800 font-medium">10-20% (Good)</span>
+                  <span className="text-yellow-600 font-bold">
+                    {performanceData.filter(p => p.repPercent >= 10 && p.repPercent < 20).length} quarters
                   </span>
-                  <span>
-                    {item.metric === "Revenue vs Goal" ? `$${(item.target / 1000000).toFixed(1)}M` : 
-                     item.metric === "Retention Rate" ? `${item.target}%` : item.target.toLocaleString()}
+                </div>
+                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                  <span className="text-red-800 font-medium">Below 10% (Needs Attention)</span>
+                  <span className="text-red-600 font-bold">
+                    {performanceData.filter(p => p.repPercent < 10).length} quarters
                   </span>
                 </div>
               </div>
-            ))}
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-900">Growth Metrics</h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                  <span className="text-blue-800 font-medium">Average Rep %</span>
+                  <span className="text-blue-600 font-bold">
+                    {(performanceData.reduce((sum, p) => sum + p.repPercent, 0) / performanceData.length).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                  <span className="text-purple-800 font-medium">Total Headlines</span>
+                  <span className="text-purple-600 font-bold">
+                    {performanceData.reduce((sum, p) => sum + p.headlines, 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg">
+                  <span className="text-indigo-800 font-medium">Market Growth</span>
+                  <span className="text-indigo-600 font-bold">
+                    +{(((performanceData[performanceData.length - 1]?.marketBilling || 0) / 
+                        (performanceData[0]?.marketBilling || 1) - 1) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
