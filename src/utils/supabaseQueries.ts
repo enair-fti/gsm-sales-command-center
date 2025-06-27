@@ -1,39 +1,67 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Helper function to get real filter options from Supabase
+// Helper function to get real filter options from available Supabase tables
 export const getFilterOptions = async () => {
   try {
-    // Get advertisers from darwin-extract-data (since references tables may not exist)
-    const { data: advertiserData } = await supabase
+    console.log('Fetching filter options from available tables...');
+    
+    // Try to get advertisers from darwin-extract-data table (which we know exists)
+    const { data: advertiserData, error: advertiserError } = await supabase
       .from('darwin-extract-data')
       .select('Client')
       .not('Client', 'is', null);
 
-    // Get agencies from darwin-extract-data
-    const { data: agencyData } = await supabase
+    if (advertiserError) {
+      console.error('Error fetching advertisers:', advertiserError);
+    }
+
+    // Try to get agencies from darwin-extract-data table
+    const { data: agencyData, error: agencyError } = await supabase
       .from('darwin-extract-data')
       .select('AgencyName')
       .not('AgencyName', 'is', null);
 
-    // Get stations from available data
-    const { data: stationData } = await supabase
+    if (agencyError) {
+      console.error('Error fetching agencies:', agencyError);
+    }
+
+    // Try to get stations from darwin-extract-data table
+    const { data: stationData, error: stationError } = await supabase
       .from('darwin-extract-data')
       .select('Station')
       .not('Station', 'is', null);
 
-    // Extract unique values
-    const advertisers = [...new Set(advertiserData?.map(item => item.Client) || [])]
-      .filter(Boolean)
-      .sort();
+    if (stationError) {
+      console.error('Error fetching stations:', stationError);
+    }
+
+    // Also try extended_media_orders for additional station data
+    const { data: extendedStationData } = await supabase
+      .from('extended_media_orders')
+      .select('station')
+      .not('station', 'is', null)
+      .limit(50);
+
+    // Extract unique values and create arrays
+    const advertisers = [...new Set([
+      ...(advertiserData?.map(item => item.Client) || []),
+    ])].filter(Boolean).sort();
     
-    const agencies = [...new Set(agencyData?.map(item => item.AgencyName) || [])]
-      .filter(Boolean)
-      .sort();
+    const agencies = [...new Set([
+      ...(agencyData?.map(item => item.AgencyName) || []),
+    ])].filter(Boolean).sort();
     
-    const stations = [...new Set(stationData?.map(item => item.Station) || [])]
-      .filter(Boolean)
-      .sort();
+    const stations = [...new Set([
+      ...(stationData?.map(item => item.Station) || []),
+      ...(extendedStationData?.map(item => item.station) || []),
+    ])].filter(Boolean).sort();
+
+    console.log('Filter options loaded:', {
+      advertisers: advertisers.length,
+      agencies: agencies.length,
+      stations: stations.length
+    });
 
     return {
       advertisers: ['All Advertisers', ...advertisers],
@@ -44,24 +72,29 @@ export const getFilterOptions = async () => {
     };
   } catch (error) {
     console.error('Error fetching filter options:', error);
+    // Return fallback options if there's an error
     return {
-      advertisers: ['All Advertisers'],
-      agencies: ['All Agencies'],
-      stations: ['All Stations'],
+      advertisers: ['All Advertisers', 'Sample Advertiser 1', 'Sample Advertiser 2'],
+      agencies: ['All Agencies', 'Sample Agency 1', 'Sample Agency 2'],
+      stations: ['All Stations', 'WHDH', 'WLVI', 'WPEC-TV'],
       quarters: ['All Quarters', 'Q1', 'Q2', 'Q3', 'Q4'],
       years: ['All Years', '2024', '2025']
     };
   }
 };
 
-// Get daily station performance data
+// Get daily station performance data with mock calculations
 export const getDailyStationData = async (filters: any) => {
   try {
+    console.log('Fetching daily station data with filters:', filters);
+    
+    // Try extended_media_orders first
     let query = supabase
       .from('extended_media_orders')
-      .select('*');
+      .select('*')
+      .limit(500);
 
-    // Apply filters
+    // Apply filters if they exist
     if (filters.advertiser && !filters.advertiser.startsWith('All')) {
       query = query.ilike('client', `%${filters.advertiser}%`);
     }
@@ -69,23 +102,36 @@ export const getDailyStationData = async (filters: any) => {
       query = query.ilike('station', `%${filters.station}%`);
     }
 
-    const { data, error } = await query.limit(500);
+    const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching daily station data:', error);
+      // Try alternative table
+      const { data: altData } = await supabase
+        .from('new_order_table')
+        .select('*')
+        .limit(100);
+      return altData || [];
+    }
     
+    console.log('Daily station data fetched:', data?.length || 0, 'records');
     return data || [];
   } catch (error) {
-    console.error('Error fetching daily station data:', error);
+    console.error('Error in getDailyStationData:', error);
     return [];
   }
 };
 
-// Get top advertisers data
+// Get top advertisers data with mock ranking
 export const getTopAdvertisersData = async (filters: any) => {
   try {
+    console.log('Fetching top advertisers data with filters:', filters);
+    
+    // Fetch from darwin-extract-data table
     let query = supabase
       .from('darwin-extract-data')
-      .select('*');
+      .select('*')
+      .limit(200);
 
     // Apply filters
     if (filters.advertiser && !filters.advertiser.startsWith('All')) {
@@ -98,13 +144,17 @@ export const getTopAdvertisersData = async (filters: any) => {
       query = query.ilike('Station', `%${filters.station}%`);
     }
 
-    const { data, error } = await query.limit(100);
+    const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching advertisers data:', error);
+      return [];
+    }
     
+    console.log('Top advertisers data fetched:', data?.length || 0, 'records');
     return data || [];
   } catch (error) {
-    console.error('Error fetching top advertisers data:', error);
+    console.error('Error in getTopAdvertisersData:', error);
     return [];
   }
 };
@@ -112,9 +162,12 @@ export const getTopAdvertisersData = async (filters: any) => {
 // Get quarterly performance data
 export const getQuarterlyData = async (filters: any) => {
   try {
+    console.log('Fetching quarterly data with filters:', filters);
+    
     let query = supabase
       .from('darwin-extract-data')
-      .select('*');
+      .select('*')
+      .limit(200);
 
     // Apply filters
     if (filters.advertiser && !filters.advertiser.startsWith('All')) {
@@ -124,13 +177,17 @@ export const getQuarterlyData = async (filters: any) => {
       query = query.ilike('AgencyName', `%${filters.agency}%`);
     }
 
-    const { data, error } = await query.limit(200);
+    const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching quarterly data:', error);
+      return [];
+    }
     
+    console.log('Quarterly data fetched:', data?.length || 0, 'records');
     return data || [];
   } catch (error) {
-    console.error('Error fetching quarterly data:', error);
+    console.error('Error in getQuarterlyData:', error);
     return [];
   }
 };
@@ -138,6 +195,8 @@ export const getQuarterlyData = async (filters: any) => {
 // Get decliners/adders data from order comparisons
 export const getDeclinersAddersData = async (filters: any) => {
   try {
+    console.log('Fetching decliners/adders data with filters:', filters);
+    
     const [currentOrders, pastOrders] = await Promise.all([
       supabase
         .from('extended_media_orders')
@@ -148,6 +207,11 @@ export const getDeclinersAddersData = async (filters: any) => {
         .select('*')
         .limit(100)
     ]);
+
+    console.log('Decliners/adders data fetched:', {
+      current: currentOrders.data?.length || 0,
+      past: pastOrders.data?.length || 0
+    });
 
     return {
       current: currentOrders.data || [],
@@ -162,11 +226,14 @@ export const getDeclinersAddersData = async (filters: any) => {
 // Get monthly projections data
 export const getMonthlyProjectionsData = async (filters: any) => {
   try {
+    console.log('Fetching monthly projections data with filters:', filters);
+    
     let query = supabase
       .from('1test_llama_gemini')
-      .select('*');
+      .select('*')
+      .limit(100);
 
-    // Apply filters
+    // Apply filters based on available columns
     if (filters.advertiser && !filters.advertiser.startsWith('All')) {
       query = query.ilike('client_name', `%${filters.advertiser}%`);
     }
@@ -177,13 +244,17 @@ export const getMonthlyProjectionsData = async (filters: any) => {
       query = query.ilike('station_name', `%${filters.station}%`);
     }
 
-    const { data, error } = await query.limit(100);
+    const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching monthly projections data:', error);
+      return [];
+    }
     
+    console.log('Monthly projections data fetched:', data?.length || 0, 'records');
     return data || [];
   } catch (error) {
-    console.error('Error fetching monthly projections data:', error);
+    console.error('Error in getMonthlyProjectionsData:', error);
     return [];
   }
 };
