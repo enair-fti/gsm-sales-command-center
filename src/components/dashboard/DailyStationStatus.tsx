@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,64 +27,28 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
     const fetchStationData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching station data with filters:', filters);
         
         const rawData = await getDailyStationData(filters);
-        console.log('Raw station data received:', rawData?.length || 0, 'records');
+        console.log('Fetched station data:', rawData);
         
-        // If no real data, generate mock data
-        if (!rawData || rawData.length === 0) {
-          console.log('No real station data found, generating mock data');
-          const mockMonthlyData = [
-            { month: 'Jan 24', totalCost: 85000, totalSpots: 1200 },
-            { month: 'Feb 24', totalCost: 92000, totalSpots: 1350 },
-            { month: 'Mar 24', totalCost: 88000, totalSpots: 1280 },
-            { month: 'Apr 24', totalCost: 95000, totalSpots: 1400 },
-            { month: 'May 24', totalCost: 102000, totalSpots: 1520 },
-            { month: 'Jun 24', totalCost: 98000, totalSpots: 1450 },
-          ];
-          setProcessedData(mockMonthlyData);
-          
-          // Create display data for charts
-          const chartData = mockMonthlyData.map(item => ({
-            month: item.month,
-            booked: item.totalCost,
-            projection: item.totalCost * 1.1, // 10% higher projection
-            lastYear: item.totalCost * 0.9, // 10% lower last year
-            pace: calculatePacing(item.totalCost, item.totalCost * 1.1),
-            variance: item.totalCost * 0.1,
-            changeVsLastYear: item.totalCost * 0.1
-          }));
-          
-          setStationData(chartData);
-        } else {
-          console.log('Processing real station data');
-          // Process the raw data into monthly aggregations
-          const monthlyAggregation = processDataByMonth(rawData);
-          setProcessedData(monthlyAggregation);
-          
-          // Create display data for charts
-          const chartData = monthlyAggregation.map(item => ({
-            month: item.month,
-            booked: item.totalCost || 0,
-            projection: (item.totalCost || 0) * 1.1, // 10% higher projection
-            lastYear: (item.totalCost || 0) * 0.9, // 10% lower last year
-            pace: calculatePacing(item.totalCost || 0, (item.totalCost || 0) * 1.1),
-            variance: (item.totalCost || 0) * 0.1,
-            changeVsLastYear: (item.totalCost || 0) * 0.1
-          }));
-          
-          setStationData(chartData);
-        }
+        // Process the raw data into monthly aggregations
+        const monthlyAggregation = processDataByMonth(rawData);
+        setProcessedData(monthlyAggregation);
+        
+        // Create display data for charts
+        const chartData = monthlyAggregation.map(item => ({
+          month: item.month,
+          booked: item.totalCost || 0,
+          projection: (item.totalCost || 0) * 1.1, // 10% higher projection
+          lastYear: (item.totalCost || 0) * 0.9, // 10% lower last year
+          pace: calculatePacing(item.totalCost || 0, (item.totalCost || 0) * 1.1),
+          variance: (item.totalCost || 0) * 0.1,
+          changeVsLastYear: (item.totalCost || 0) * 0.1
+        }));
+        
+        setStationData(chartData);
       } catch (error) {
         console.error('Error fetching station data:', error);
-        console.log('Using fallback mock data due to error');
-        // Fallback mock data
-        const fallbackData = [
-          { month: 'Jan 24', booked: 75000, projection: 82500, lastYear: 67500, pace: 90.9, variance: 7500, changeVsLastYear: 7500 }
-        ];
-        setStationData(fallbackData);
-        setProcessedData([{ month: 'Jan 24', totalCost: 75000, totalSpots: 1000 }]);
       } finally {
         setLoading(false);
       }
