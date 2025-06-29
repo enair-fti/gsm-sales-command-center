@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Filter, X } from 'lucide-react';
-import { getFilterOptions } from '@/utils/supabaseQueries';
 
 interface GlobalFiltersProps {
   filters: {
@@ -22,46 +21,15 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
   onFilterChange,
   onClearFilters
 }) => {
-  const [filterOptions, setFilterOptions] = useState({
-    advertisers: ['All Advertisers'],
-    agencies: ['All Agencies'],
-    stations: ['All Stations'],
-    quarters: ['All Quarters', 'Q1', 'Q2', 'Q3', 'Q4'],
-    years: ['All Years', '2024', '2025']
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFilterOptions = async () => {
-      try {
-        const options = await getFilterOptions();
-        setFilterOptions(options);
-      } catch (error) {
-        console.error('Error loading filter options:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadFilterOptions();
-  }, []);
+  const agencies = ['All Agencies', 'Zenith Media', 'GroupM', 'Publicis', 'Omnicom', 'Havas'];
+  const advertisers = ['All Advertisers', 'Toyota', 'McDonald\'s', 'Coca-Cola', 'Walmart', 'Apple'];
+  const stations = ['All Stations', 'Providence', 'Boston Metro', 'Hartford', 'Springfield'];
+  const quarters = ['All Quarters', 'Q1', 'Q2', 'Q3', 'Q4'];
+  const years = ['All Years', '2024', '2025'];
 
   const activeFilters = Object.entries(filters).filter(([_, value]) => 
     value && !value.startsWith('All')
   );
-
-  if (loading) {
-    return (
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Loading filters...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="mb-6">
@@ -90,7 +58,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               onChange={(e) => onFilterChange('agency', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {filterOptions.agencies.map(agency => (
+              {agencies.map(agency => (
                 <option key={agency} value={agency}>{agency}</option>
               ))}
             </select>
@@ -103,7 +71,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               onChange={(e) => onFilterChange('advertiser', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {filterOptions.advertisers.map(advertiser => (
+              {advertisers.map(advertiser => (
                 <option key={advertiser} value={advertiser}>{advertiser}</option>
               ))}
             </select>
@@ -116,7 +84,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               onChange={(e) => onFilterChange('station', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {filterOptions.stations.map(station => (
+              {stations.map(station => (
                 <option key={station} value={station}>{station}</option>
               ))}
             </select>
@@ -129,7 +97,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               onChange={(e) => onFilterChange('quarter', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {filterOptions.quarters.map(quarter => (
+              {quarters.map(quarter => (
                 <option key={quarter} value={quarter}>{quarter}</option>
               ))}
             </select>
@@ -142,7 +110,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               onChange={(e) => onFilterChange('year', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {filterOptions.years.map(year => (
+              {years.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
