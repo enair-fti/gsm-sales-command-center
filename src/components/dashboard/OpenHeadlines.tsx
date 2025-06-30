@@ -57,18 +57,28 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
         }
         
         if (filters.market && !filters.market.startsWith('All')) {
-          const marketFilter = filters.market.toLowerCase();
+          const marketFilter = filters.market.toLowerCase().trim();
           data = data.filter(item => {
             if (!item.market) return false;
-            const itemMarket = item.market.toLowerCase();
+            const itemMarket = item.market.toLowerCase().trim();
             
-            // Try multiple matching strategies
-            return itemMarket.includes(marketFilter) || 
-                   marketFilter.includes(itemMarket) ||
-                   // Handle cases like "Boston (Manchester)" vs "Boston" or "Manchester"
-                   (marketFilter.includes('(') && 
-                    (itemMarket.includes(marketFilter.split('(')[0].trim()) ||
-                     itemMarket.includes(marketFilter.match(/\(([^)]+)\)/)?.[1] || '')));
+            console.log('Comparing:', `"${marketFilter}"`, 'with', `"${itemMarket}"`);
+            
+            // Direct match (most common case)
+            if (itemMarket === marketFilter) return true;
+            
+            // Handle variations in spacing and punctuation
+            const normalizeMarket = (market: string) => {
+              return market.replace(/[-\s]+/g, '').toLowerCase();
+            };
+            
+            const normalizedFilter = normalizeMarket(marketFilter);
+            const normalizedItem = normalizeMarket(itemMarket);
+            
+            if (normalizedFilter === normalizedItem) return true;
+            
+            // Handle partial matches for compound market names
+            return itemMarket.includes(marketFilter) || marketFilter.includes(itemMarket);
           });
           console.log('After market filter:', data.length, 'records');
           console.log('Market filter applied:', filters.market);
