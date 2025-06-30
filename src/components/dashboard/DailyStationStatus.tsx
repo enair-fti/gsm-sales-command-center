@@ -2,9 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
 import { Calendar, TrendingUp, DollarSign, Target, Download } from 'lucide-react';
-import { fetchDarwinProjections, calculateMonthlyPerformanceData } from '@/utils/referenceData';
+import { 
+  fetchDarwinProjections, 
+  calculateMonthlyPerformanceData, 
+  fetchCompetitiveAnalysisData, 
+  fetchPacingData 
+} from '@/utils/referenceData';
+import CompetitiveAnalysisChart from './charts/CompetitiveAnalysisChart';
+import DarwinProjectionsChart from './charts/DarwinProjectionsChart';
+import PacingTrendChart from './charts/PacingTrendChart';
 
 interface DailyStationStatusProps {
   station: string;
@@ -20,8 +27,11 @@ interface DailyStationStatusProps {
 }
 
 const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filters }) => {
-  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('monthly');
+  const [viewMode, setViewMode] = useState<'charts' | 'performance'>('charts');
   const [stationData, setStationData] = useState<any[]>([]);
+  const [competitiveData, setCompetitiveData] = useState<any[]>([]);
+  const [darwinData, setDarwinData] = useState<any[]>([]);
+  const [pacingData, setPacingData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRealData, setIsRealData] = useState(false);
   const [kpiMetrics, setKpiMetrics] = useState({
@@ -31,53 +41,64 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
     monthProgress: 84
   });
 
-  // Fetch station performance data
+  // Fetch all data sources
   useEffect(() => {
-    const fetchStationData = async () => {
+    const fetchAllData = async () => {
       try {
         setLoading(true);
         
-        // Fetch Darwin projections data
-        const darwinData = await fetchDarwinProjections(filters);
-        console.log('Fetched Darwin projections for station status:', darwinData.length);
+        // Fetch all data sources in parallel
+        const [darwinProjections, competitiveAnalysis, pacingInfo] = await Promise.all([
+          fetchDarwinProjections(filters),
+          fetchCompetitiveAnalysisData(filters),
+          fetchPacingData(filters)
+        ]);
         
-        if (darwinData.length > 0) {
-          setIsRealData(true);
+        console.log('Fetched Darwin projections:', darwinProjections.length);
+        console.log('Fetched competitive analysis:', competitiveAnalysis.length);
+        console.log('Fetched pacing data:', pacingInfo.length);
+        
+        setDarwinData(darwinProjections);
+        setCompetitiveData(competitiveAnalysis);
+        setPacingData(pacingInfo);
+        
+        // Check if we have real data
+        const hasRealData = darwinProjections.length > 0 || competitiveAnalysis.length > 0 || pacingInfo.length > 0;
+        setIsRealData(hasRealData);
+        
+        // Calculate monthly performance data from available sources
+        const monthlyPerformance = await calculateMonthlyPerformanceData(darwinProjections, pacingInfo);
+        setStationData(monthlyPerformance);
+        
+        // Calculate KPI metrics from available data
+        if (pacingInfo.length > 0) {
+          // Use pacing data for KPIs
+          const totalSales = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Sales $']?.toString().replace(/[,$]/g, '')) || 0), 0);
+          const totalProjection = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Projection']?.toString().replace(/[,$]/g, '')) || 0), 0);
+          const totalLastYear = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Last Year']?.toString().replace(/[,$]/g, '')) || 0), 0);
+          const avgPacing = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['% Pacing']?.toString().replace(/%/g, '')) || 0), 0) / pacingInfo.length;
           
-          // Calculate monthly performance data from real Darwin data
-          const monthlyData = await calculateMonthlyPerformanceData(darwinData);
-          setStationData(monthlyData);
-          
-          // Calculate KPI metrics from real data
-          const totalBilling = darwinData.reduce((sum, item) => sum + item.billing, 0);
-          const totalProjected = darwinData.reduce((sum, item) => sum + item.projectedBilling, 0);
-          const totalLastYear = totalBilling * 0.85; // Estimate
+          setKpiMetrics({
+            salesDollars: totalSales,
+            pacing: avgPacing,
+            changeVsLastYear: totalSales - totalLastYear,
+            monthProgress: 84
+          });
+        } else if (darwinProjections.length > 0) {
+          // Fallback to Darwin data for KPIs
+          const totalBilling = darwinProjections.reduce((sum, item) => sum + item.billing, 0);
+          const totalProjected = darwinProjections.reduce((sum, item) => sum + item.projectedBilling, 0);
+          const totalLastYear = totalBilling * 0.85;
           const pacing = totalProjected > 0 ? (totalBilling / totalProjected) * 100 : 0;
-          const changeVsLastYear = totalBilling - totalLastYear;
           
           setKpiMetrics({
             salesDollars: totalBilling,
             pacing: pacing,
-            changeVsLastYear: changeVsLastYear,
-            monthProgress: 84 // Keep as static for now
+            changeVsLastYear: totalBilling - totalLastYear,
+            monthProgress: 84
           });
-          
         } else {
           // Use mock data if no real data available
-          setIsRealData(false);
-          const mockStationData = [
-            { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000, changeVsLastYear: 20000 },
-            { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000, changeVsLastYear: 28000 },
-            { month: 'Mar 24', booked: 289000, projection: 285000, lastYear: 255000, pace: 101.4, variance: 34000, changeVsLastYear: 34000 },
-            { month: 'Apr 24', booked: 312000, projection: 300000, lastYear: 270000, pace: 104.0, variance: 42000, changeVsLastYear: 42000 },
-            { month: 'May 24', booked: 298000, projection: 310000, lastYear: 285000, pace: 96.1, variance: 13000, changeVsLastYear: 13000 },
-            { month: 'Jun 24', booked: 334000, projection: 325000, lastYear: 295000, pace: 102.8, variance: 39000, changeVsLastYear: 39000 },
-            { month: 'Jul 24', booked: 356000, projection: 340000, lastYear: 310000, pace: 104.7, variance: 46000, changeVsLastYear: 46000 },
-            { month: 'Aug 24', booked: 345000, projection: 350000, lastYear: 320000, pace: 98.6, variance: 25000, changeVsLastYear: 25000 },
-            { month: 'Sep 24', booked: 378000, projection: 365000, lastYear: 340000, pace: 103.6, variance: 38000, changeVsLastYear: 38000 },
-          ];
-          
-          setStationData(mockStationData);
           setKpiMetrics({
             salesDollars: 378000,
             pacing: 103.6,
@@ -85,25 +106,26 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             monthProgress: 84
           });
         }
+        
       } catch (error) {
-        console.error('Error fetching station data:', error);
+        console.error('Error fetching dashboard data:', error);
         setIsRealData(false);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStationData();
+    fetchAllData();
   }, [station, filters]);
 
   const kpiData = [
     { 
       title: "Sales Dollars (MTD)", 
       value: `$${(kpiMetrics.salesDollars / 1000).toFixed(0)}K`, 
-      change: isRealData ? "Real Darwin Data" : "+3.6%", 
+      change: isRealData ? "Real Data" : "+3.6%", 
       positive: true,
       icon: DollarSign,
-      tooltip: isRealData ? "Month-to-date confirmed sales dollars from Darwin projections" : "Sample data - not real Darwin projections"
+      tooltip: isRealData ? "Month-to-date confirmed sales dollars from real data" : "Sample data - not real projections"
     },
     { 
       title: "% Pacing", 
@@ -150,7 +172,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading station data from Darwin projections...</div>
+        <div className="text-lg text-gray-600">Loading real-time dashboard data...</div>
       </div>
     );
   }
@@ -161,24 +183,24 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       <div className="flex items-center justify-between">
         <div className="flex space-x-2">
           <button
-            onClick={() => setViewMode('monthly')}
+            onClick={() => setViewMode('charts')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'monthly' 
+              viewMode === 'charts' 
                 ? 'bg-blue-600 text-white' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Monthly View
+            Data Visualizations
           </button>
           <button
-            onClick={() => setViewMode('daily')}
+            onClick={() => setViewMode('performance')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'daily' 
+              viewMode === 'performance' 
                 ? 'bg-blue-600 text-white' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Daily View
+            Performance Details
           </button>
         </div>
         <div className="flex items-center space-x-3">
@@ -190,7 +212,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             <span>Export</span>
           </button>
           <Badge variant="outline" className={`text-xs ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-            {isRealData ? 'Real Darwin Data' : 'Mock Data - Sample projections'}
+            {isRealData ? 'Real Data Connected' : 'Mock Data - No real data available'}
           </Badge>
         </div>
       </div>
@@ -219,76 +241,49 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
         ))}
       </div>
 
-      {/* Performance Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Performance & Pacing {isRealData ? '(Real Darwin Data)' : '(Sample Data)'}</CardTitle>
-          <CardDescription>
-            Monthly sales dollars vs. projections with pacing indicators {isRealData ? 'from Darwin system' : 'using sample data'}
-            <Badge variant="outline" className={`text-xs ml-2 ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-              {isRealData ? 'Real Data' : 'Mock Data'}
-            </Badge>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 mb-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={stationData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis yAxisId="left" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`} />
-                <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value.toFixed(1)}%`} />
-                <Tooltip 
-                  formatter={(value, name) => {
-                    if (name === 'pace') return [`${value}%`, 'Pace %'];
-                    return [`$${(Number(value) / 1000).toFixed(0)}K`, name];
-                  }}
-                />
-                <Bar yAxisId="left" dataKey="projection" fill="#e5e7eb" name="Projection" />
-                <Bar yAxisId="left" dataKey="booked" fill="#3b82f6" name="Booked" />
-                <Bar yAxisId="left" dataKey="lastYear" fill="#94a3b8" name="Last Year" />
-                <Line yAxisId="right" type="monotone" dataKey="pace" stroke="#ef4444" strokeWidth={3} name="Pace %" />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Main Content */}
+      {viewMode === 'charts' ? (
+        <div className="space-y-6">
+          {/* Competitive Analysis Chart */}
+          {competitiveData.length > 0 && (
+            <CompetitiveAnalysisChart data={competitiveData} />
+          )}
 
-          {/* Performance Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-2 font-medium text-gray-600">Month</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Sales Dollars</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Projection</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Last Year</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">% Pacing</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-600">Change vs Last Year</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stationData.map((row, index) => (
-                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-2 font-medium">{row.month}</td>
-                    <td className="py-3 px-2 text-right font-bold">${(row.booked / 1000).toFixed(0)}K</td>
-                    <td className="py-3 px-2 text-right text-blue-600">${(row.projection / 1000).toFixed(0)}K</td>
-                    <td className="py-3 px-2 text-right text-gray-600">${(row.lastYear / 1000).toFixed(0)}K</td>
-                    <td className={`py-3 px-2 text-right font-medium ${
-                      row.pace >= 100 ? 'text-green-600' : row.pace >= 95 ? 'text-yellow-600' : 'text-red-600'
-                    }`}>
-                      {row.pace.toFixed(1)}%
-                    </td>
-                    <td className={`py-3 px-2 text-right font-medium ${
-                      row.changeVsLastYear >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {row.changeVsLastYear >= 0 ? '+' : ''}${(row.changeVsLastYear / 1000).toFixed(0)}K
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+          {/* Darwin Projections Chart */}
+          {darwinData.length > 0 && (
+            <DarwinProjectionsChart data={darwinData} />
+          )}
+
+          {/* Pacing Trend Chart */}
+          {stationData.length > 0 && (
+            <PacingTrendChart data={stationData} />
+          )}
+
+          {/* Show message if no data is available */}
+          {!isRealData && (
+            <Card>
+              <CardHeader>
+                <CardTitle>No Real Data Available</CardTitle>
+                <CardDescription>
+                  Unable to connect to the _temp tables. Please check database permissions and table names.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-gray-600">
+                  <p>Expected tables:</p>
+                  <ul className="list-disc list-inside mt-2">
+                    <li>_temp."Competitive Analysis_250624-1224_AgyAdv"</li>
+                    <li>_temp."darwin-sales-projections-20250624_Cris View"</li>
+                    <li>_temp."Pacing_250624-1221_Adv"</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : (
+        <PacingTrendChart data={stationData} />
+      )}
     </div>
   );
 };
