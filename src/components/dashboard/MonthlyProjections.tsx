@@ -5,6 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronUp, ChevronDown, Filter } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { fetchDarwinProjections } from '@/utils/referenceData';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MonthlyProjectionsProps {
   station: string;
@@ -87,17 +94,17 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   };
 
   const summaryData = {
-    totalBilling: filteredData.reduce((sum, item) => sum + item.billing, 0),
-    totalProjected: filteredData.reduce((sum, item) => sum + item.projectedBilling, 0),
-    totalMarketActual: filteredData.reduce((sum, item) => sum + item.actualMarket, 0),
-    totalMarketProjected: filteredData.reduce((sum, item) => sum + item.projectedMarket, 0),
+    totalBilling: filteredData.reduce((sum, item) => sum + Number(item.billing || 0), 0),
+    totalProjected: filteredData.reduce((sum, item) => sum + Number(item.projectedBilling || 0), 0),
+    totalMarketActual: filteredData.reduce((sum, item) => sum + Number(item.actualMarket || 0), 0),
+    totalMarketProjected: filteredData.reduce((sum, item) => sum + Number(item.projectedMarket || 0), 0),
     advertisers: filteredData.length
   };
 
   // Calculate category breakdown for pie chart
   const categoryBreakdown = filteredData.reduce((acc, item) => {
     const category = item.category || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + item.billing;
+    acc[category] = (acc[category] || 0) + Number(item.billing || 0);
     return acc;
   }, {} as Record<string, number>);
 
@@ -126,15 +133,16 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-gray-500" />
-            <select 
-              value={filterMarket}
-              onChange={(e) => setFilterMarket(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {markets.map(market => (
-                <option key={market} value={market}>{market}</option>
-              ))}
-            </select>
+            <Select value={filterMarket} onValueChange={setFilterMarket}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select Market" />
+              </SelectTrigger>
+              <SelectContent>
+                {markets.map(market => (
+                  <SelectItem key={market} value={market}>{market}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Badge variant="outline" className="text-sm">
             {filteredData.length} Advertisers
@@ -282,7 +290,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
               </thead>
               <tbody>
                 {filteredData.map((row, index) => {
-                  const attainment = parseFloat(calculateAttainment(row.billing, row.projectedBilling));
+                  const attainment = parseFloat(calculateAttainment(Number(row.billing || 0), Number(row.projectedBilling || 0)));
                   return (
                     <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-2">
@@ -296,22 +304,22 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                           {row.category}
                         </Badge>
                       </td>
-                      <td className="py-3 px-2 text-right font-bold">${row.billing.toLocaleString()}</td>
-                      <td className="py-3 px-2 text-right text-blue-600">${row.projectedBilling.toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right font-bold">${Number(row.billing || 0).toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right text-blue-600">${Number(row.projectedBilling || 0).toLocaleString()}</td>
                       <td className={`py-3 px-2 text-right font-medium ${
                         attainment >= 100 ? 'text-green-600' : attainment >= 90 ? 'text-yellow-600' : 'text-red-600'
                       }`}>
                         {attainment}%
                       </td>
                       <td className={`py-3 px-2 text-right font-medium ${
-                        row.variance >= 0 ? 'text-green-600' : 'text-red-600'
+                        Number(row.variance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {row.variance >= 0 ? '+' : ''}${row.variance.toLocaleString()}
+                        {Number(row.variance || 0) >= 0 ? '+' : ''}${Number(row.variance || 0).toLocaleString()}
                       </td>
                       <td className="py-3 px-2 text-right">
-                        <div className="font-medium">${row.actualMarket.toLocaleString()}</div>
+                        <div className="font-medium">${Number(row.actualMarket || 0).toLocaleString()}</div>
                         <div className="text-xs text-gray-500">
-                          vs ${row.projectedMarket.toLocaleString()} proj
+                          vs ${Number(row.projectedMarket || 0).toLocaleString()} proj
                         </div>
                       </td>
                     </tr>
