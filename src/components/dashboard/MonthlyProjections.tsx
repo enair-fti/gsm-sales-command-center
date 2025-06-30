@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,14 +43,33 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
 
+  // Helper function to safely parse billing values
+  const parseBillingValue = (value: any): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const cleanValue = value.replace(/[,$]/g, '');
+      const parsed = parseFloat(cleanValue);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  };
+
+  // Format numbers for display
+  const formatCurrency = (value: number): string => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(0)}K`;
+    } else {
+      return `$${value.toFixed(0)}`;
+    }
+  };
+
   // Calculate category breakdown from real data
   const calculateCategoryBreakdown = (data: any[]) => {
     const categoryTotals: Record<string, number> = data.reduce((acc, item: any) => {
       const category = item.category || 'Other';
-      const billingValue = item.billing;
-      // Safely convert billing to number, handling unknown types
-      const billing = typeof billingValue === 'number' ? billingValue : 
-                     typeof billingValue === 'string' ? parseFloat(billingValue.replace(/[,$]/g, '')) : 0;
+      const billing = parseBillingValue(item.billing);
       
       if (!acc[category]) {
         acc[category] = 0;
@@ -71,7 +91,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         };
       })
       .sort((a, b) => b.value - a.value)
-      .slice(0, 6); // Top 6 categories
+      .slice(0, 8); // Show top 8 categories for better visualization
   };
 
   const [pieData, setPieData] = useState<any[]>([]);
@@ -80,25 +100,20 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching Darwin projections with filters:', filters);
+        console.log('Fetching full Darwin projections dataset with filters:', filters);
         
         let data = await fetchDarwinProjections(filters);
-        console.log('Raw Darwin data received:', data.length, 'records');
+        console.log('Raw Darwin data received:', data.length, 'records (full dataset)');
         
         // Transform and calculate metrics from real data
         const transformedData = data.map((item: any) => {
-          // Parse billing values, handling different formats and unknown types
-          const parseBillingValue = (value: any): number => {
-            if (typeof value === 'number') return value;
-            if (typeof value === 'string') return parseFloat(value.replace(/[,$]/g, '')) || 0;
-            return 0;
-          };
-
           const billing = parseBillingValue(item['Q3-2025 Billing$']);
           const projectedBilling = parseBillingValue(item['Proj Billing$']);
           const actualMarket = parseBillingValue(item['Q3-2025 Market$']);
           const projectedMarket = parseBillingValue(item['Proj Market$']);
           const projectedDiff = parseBillingValue(item['Proj Diff$']);
+          
+          // Handle projected share percentage
           const projectedShareValue = item['Proj Share%'];
           const projectedShare = typeof projectedShareValue === 'string' ? 
                                 parseFloat(projectedShareValue.replace(/%/g, '')) || 0 : 
@@ -121,7 +136,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           };
         });
 
-        console.log('Transformed data:', transformedData.length, 'records');
+        console.log('Transformed data:', transformedData.length, 'records (full dataset)');
 
         // Apply additional filters
         let filteredData = transformedData;
@@ -141,7 +156,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
 
         setProjectionsData(filteredData);
 
-        // Calculate real metrics
+        // Calculate real metrics from full dataset
         const totalBilling = filteredData.reduce((sum, item) => sum + item.billing, 0);
         const totalProjected = filteredData.reduce((sum, item) => sum + item.projectedBilling, 0);
         const totalMarketActual = filteredData.reduce((sum, item) => sum + item.actualMarket, 0);
@@ -157,20 +172,20 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           advertisers: filteredData.length
         });
 
-        // Calculate category breakdown from real data
+        // Calculate category breakdown from full dataset
         const categoryBreakdown = calculateCategoryBreakdown(filteredData);
         setPieData(categoryBreakdown);
 
-        console.log('Calculated metrics:', {
-          totalBilling,
-          totalProjected,
-          avgAttainment,
-          advertisers: filteredData.length
+        console.log('Calculated metrics from full dataset:', {
+          totalBilling: formatCurrency(totalBilling),
+          totalProjected: formatCurrency(totalProjected),
+          avgAttainment: avgAttainment.toFixed(1) + '%',
+          advertisers: filteredData.length,
+          totalRecords: filteredData.length
         });
         
       } catch (error) {
         console.error('Error fetching projections data:', error);
-        // Keep existing mock data structure for fallback
         setRealMetrics({
           totalBilling: 0,
           totalProjected: 0,
@@ -211,19 +226,10 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
     return projected > 0 ? ((actual / projected) * 100).toFixed(1) : '0.0';
   };
 
-  // Use real calculated metrics
-  const summaryData = {
-    totalBilling: realMetrics.totalBilling,
-    totalProjected: realMetrics.totalProjected,
-    totalMarketActual: realMetrics.totalMarketActual,
-    totalMarketProjected: realMetrics.totalMarketProjected,
-    advertisers: realMetrics.advertisers
-  };
-
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading real projections data from Darwin system...</div>
+        <div className="text-lg text-gray-600">Loading full projections dataset from Darwin system...</div>
       </div>
     );
   }
@@ -233,8 +239,8 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       {/* Header with Filters */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Monthly Projections (Darwin System)</h2>
-          <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE - Live Data</p>
+          <h2 className="text-xl font-bold text-gray-900">Monthly Projections (Darwin System - Full Dataset)</h2>
+          <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE - Live Data (No Limits)</p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
@@ -251,7 +257,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
             </Select>
           </div>
           <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-200">
-            {filteredData.length} Live Records
+            {filteredData.length} Live Records (Full Dataset)
           </Badge>
         </div>
       </div>
@@ -263,9 +269,9 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
             <CardTitle className="text-sm font-medium text-gray-600">Total Billing (Live)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">${summaryData.totalBilling.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-gray-900">{formatCurrency(realMetrics.totalBilling)}</div>
             <div className="text-sm text-blue-600">
-              {calculateAttainment(summaryData.totalBilling, summaryData.totalProjected)}% of projection
+              {calculateAttainment(realMetrics.totalBilling, realMetrics.totalProjected)}% of projection
             </div>
           </CardContent>
         </Card>
@@ -274,7 +280,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
             <CardTitle className="text-sm font-medium text-gray-600">Projected Billing</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">${summaryData.totalProjected.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-gray-900">{formatCurrency(realMetrics.totalProjected)}</div>
             <div className="text-sm text-gray-600">Monthly target</div>
           </CardContent>
         </Card>
@@ -283,9 +289,9 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
             <CardTitle className="text-sm font-medium text-gray-600">Market Actual</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">${summaryData.totalMarketActual.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-gray-900">{formatCurrency(realMetrics.totalMarketActual)}</div>
             <div className="text-sm text-green-600">
-              {calculateAttainment(summaryData.totalMarketActual, summaryData.totalMarketProjected)}% of market projection
+              {calculateAttainment(realMetrics.totalMarketActual, realMetrics.totalMarketProjected)}% of market projection
             </div>
           </CardContent>
         </Card>
@@ -294,7 +300,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
             <CardTitle className="text-sm font-medium text-gray-600">Active Advertisers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{summaryData.advertisers}</div>
+            <div className="text-2xl font-bold text-gray-900">{realMetrics.advertisers.toLocaleString()}</div>
             <div className="text-sm text-gray-600">In selected market(s)</div>
           </CardContent>
         </Card>
@@ -320,7 +326,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Billing']} />
+                    <Tooltip formatter={(value) => [`${formatCurrency(Number(value))}`, 'Billing']} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
@@ -337,10 +343,10 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       {pieData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Category Distribution (Live Data)</CardTitle>
+            <CardTitle>Category Distribution (Full Dataset - Live Data)</CardTitle>
             <CardDescription>
               <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                Real Data - Live category breakdown from Darwin system
+                Real Data - Full category breakdown from Darwin system ({pieData.length} categories)
               </Badge>
             </CardDescription>
           </CardHeader>
@@ -354,7 +360,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                   />
                   <div className="flex-1">
                     <div className="text-sm font-medium">{entry.name}</div>
-                    <div className="text-xs text-gray-500">{entry.percentage}% • ${Number(entry.value).toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">{entry.percentage}% • {formatCurrency(Number(entry.value))}</div>
                   </div>
                 </div>
               ))}
@@ -363,11 +369,11 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         </Card>
       )}
 
-      {/* Projections Table */}
+      {/* Projections Table - Show all data */}
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Projections by Advertiser & AE (Live Data)</CardTitle>
-          <CardDescription>Real billing performance vs projections with market context from Darwin system</CardDescription>
+          <CardTitle>Monthly Projections by Advertiser & AE (Full Dataset - Live Data)</CardTitle>
+          <CardDescription>Real billing performance vs projections with market context from Darwin system - All {filteredData.length} records</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -429,8 +435,8 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                           {row.category}
                         </Badge>
                       </td>
-                      <td className="py-3 px-2 text-right font-bold">${billing.toLocaleString()}</td>
-                      <td className="py-3 px-2 text-right text-blue-600">${projectedBilling.toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right font-bold">{formatCurrency(billing)}</td>
+                      <td className="py-3 px-2 text-right text-blue-600">{formatCurrency(projectedBilling)}</td>
                       <td className={`py-3 px-2 text-right font-medium ${
                         attainment >= 100 ? 'text-green-600' : attainment >= 90 ? 'text-yellow-600' : 'text-red-600'
                       }`}>
@@ -439,12 +445,12 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                       <td className={`py-3 px-2 text-right font-medium ${
                         variance >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {variance >= 0 ? '+' : ''}${variance.toLocaleString()}
+                        {variance >= 0 ? '+' : ''}{formatCurrency(variance)}
                       </td>
                       <td className="py-3 px-2 text-right">
-                        <div className="font-medium">${actualMarket.toLocaleString()}</div>
+                        <div className="font-medium">{formatCurrency(actualMarket)}</div>
                         <div className="text-xs text-gray-500">
-                          vs ${projectedMarket.toLocaleString()} proj
+                          vs {formatCurrency(projectedMarket)} proj
                         </div>
                       </td>
                     </tr>
