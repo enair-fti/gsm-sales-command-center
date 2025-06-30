@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ReferenceData {
@@ -160,7 +161,7 @@ export async function fetchDarwinProjections(filters: any = {}) {
   try {
     console.log('Fetching Darwin projections with filters:', filters);
     
-    // Fetch from the correct _temp schema table
+    // Fetch from the _temp schema table directly (not public._temp)
     let query = supabase
       .from('_temp.darwin-sales-projections-20250624_Cris View')
       .select('*');
