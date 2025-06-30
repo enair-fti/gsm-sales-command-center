@@ -22,31 +22,73 @@ export interface ReferenceData {
   aeNames: string[];
 }
 
-// Fetch reference data for filters
+// Fetch reference data from dedicated reference tables
 export const fetchReferenceData = async (): Promise<ReferenceData> => {
   try {
-    // Fetch Darwin projections to extract unique values
-    const { data: darwinData, error: darwinError } = await supabase.rpc('fetch_darwin_projections');
+    console.log('Fetching reference data from reference tables...');
     
-    if (darwinError) {
-      console.error('Error fetching reference data:', darwinError);
-      return {
-        agencies: ['All Agencies'],
-        advertisers: ['All Advertisers'],
-        stations: ['All Stations'],
-        markets: ['All Markets'],
-        categories: ['All Categories'],
-        aeNames: ['All AE Names']
-      };
+    // Fetch agencies from references_agencies table
+    const { data: agenciesData, error: agenciesError } = await supabase
+      .from('references_agencies')
+      .select('Code, Office')
+      .order('Code');
+
+    if (agenciesError) {
+      console.error('Error fetching agencies:', agenciesError);
     }
 
-    // Extract unique values with proper type casting
-    const agencies = ['All Agencies', ...Array.from(new Set((darwinData || []).map((item: any) => item['Agency Name']).filter(Boolean))) as string[]];
-    const advertisers = ['All Advertisers', ...Array.from(new Set((darwinData || []).map((item: any) => item['Advertiser Name']).filter(Boolean))) as string[]];
-    const stations = ['All Stations', ...Array.from(new Set((darwinData || []).map((item: any) => item['Station Code']).filter(Boolean))) as string[]];
-    const markets = ['All Markets', ...Array.from(new Set((darwinData || []).map((item: any) => item['Market']).filter(Boolean))) as string[]];
-    const categories = ['All Categories', ...Array.from(new Set((darwinData || []).map((item: any) => item['Category']).filter(Boolean))) as string[]];
-    const aeNames = ['All AE Names', ...Array.from(new Set((darwinData || []).map((item: any) => item['Seller Code']).filter(Boolean))) as string[]];
+    // Fetch advertisers from references_advertisers table
+    const { data: advertisersData, error: advertisersError } = await supabase
+      .from('references_advertisers')
+      .select('Code, Name')
+      .order('Code');
+
+    if (advertisersError) {
+      console.error('Error fetching advertisers:', advertisersError);
+    }
+
+    // Extract unique values from reference tables
+    const agencies = ['All Agencies'];
+    if (agenciesData) {
+      const uniqueAgencies = Array.from(new Set(agenciesData.map(item => item.Office || item.Code).filter(Boolean))) as string[];
+      agencies.push(...uniqueAgencies);
+    }
+
+    const advertisers = ['All Advertisers'];
+    if (advertisersData) {
+      const uniqueAdvertisers = Array.from(new Set(advertisersData.map(item => item.Name || item.Code).filter(Boolean))) as string[];
+      advertisers.push(...uniqueAdvertisers);
+    }
+
+    // For stations, markets, categories, and AE names, we'll still pull from Darwin data
+    // since these don't seem to have dedicated reference tables
+    const { data: darwinData, error: darwinError } = await supabase.rpc('fetch_darwin_projections');
+    
+    let stations = ['All Stations'];
+    let markets = ['All Markets'];
+    let categories = ['All Categories'];
+    let aeNames = ['All AE Names'];
+
+    if (!darwinError && darwinData) {
+      const uniqueStations = Array.from(new Set((darwinData || []).map((item: any) => item['Station Code']).filter(Boolean))) as string[];
+      const uniqueMarkets = Array.from(new Set((darwinData || []).map((item: any) => item['Market']).filter(Boolean))) as string[];
+      const uniqueCategories = Array.from(new Set((darwinData || []).map((item: any) => item['Category']).filter(Boolean))) as string[];
+      const uniqueAeNames = Array.from(new Set((darwinData || []).map((item: any) => item['Seller Code']).filter(Boolean))) as string[];
+
+      stations.push(...uniqueStations);
+      markets.push(...uniqueMarkets);
+      categories.push(...uniqueCategories);
+      aeNames.push(...uniqueAeNames);
+    }
+
+    console.log('Successfully fetched reference data:', {
+      agencies: agencies.length,
+      advertisers: advertisers.length,
+      stations: stations.length,
+      markets: markets.length,
+      categories: categories.length,
+      aeNames: aeNames.length
+    });
 
     return {
       agencies,
