@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,17 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
     monthProgress: 84
   });
 
+  // Format currency with M/K notation for better readability
+  const formatCurrency = (value: number): string => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(0)}K`;
+    } else {
+      return `$${value.toFixed(0)}`;
+    }
+  };
+
   // Helper function to safely parse billing values
   const parseBillingValue = (value: any): number => {
     if (typeof value === 'number') return value;
@@ -52,16 +64,16 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
     return 0;
   };
 
-  // Fetch all data sources
+  // Fetch all data sources without limits
   useEffect(() => {
     const fetchAllData = async () => {
       try {
         setLoading(true);
         setHasError(false);
         
-        console.log('Fetching dashboard data with filters:', filters);
+        console.log('Fetching full dashboard data with filters:', filters);
         
-        // Fetch all data sources in parallel
+        // Fetch all data sources in parallel - no limits applied
         const [darwinProjections, competitiveAnalysis, pacingInfo] = await Promise.all([
           fetchDarwinProjections(filters),
           fetchCompetitiveAnalysisData(filters),
@@ -114,7 +126,6 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             monthProgress: 84
           });
         } else {
-          // Use mock data when no real data is available
           setHasError(true);
           setIsRealData(false);
           setDarwinData([]);
@@ -158,7 +169,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
   const kpiData = [
     { 
       title: "Sales Dollars (MTD)", 
-      value: `$${(kpiMetrics.salesDollars / 1000).toFixed(0)}K`, 
+      value: formatCurrency(kpiMetrics.salesDollars), 
       change: isRealData ? "Real Data" : "No Data", 
       positive: true,
       icon: DollarSign,
@@ -174,7 +185,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
     },
     { 
       title: "Change vs. Last Year", 
-      value: `${kpiMetrics.changeVsLastYear >= 0 ? '+' : ''}$${(kpiMetrics.changeVsLastYear / 1000).toFixed(0)}K`, 
+      value: `${kpiMetrics.changeVsLastYear >= 0 ? '+' : ''}${formatCurrency(kpiMetrics.changeVsLastYear)}`, 
       change: `${kpiMetrics.salesDollars > 0 ? ((kpiMetrics.changeVsLastYear / (kpiMetrics.salesDollars * 0.85)) * 100).toFixed(1) : '0.0'}%`, 
       positive: kpiMetrics.changeVsLastYear >= 0,
       icon: TrendingUp,
@@ -292,14 +303,41 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       {/* Main Content */}
       {viewMode === 'charts' ? (
         <div className="space-y-6">
-          {/* Competitive Analysis Chart */}
-          {competitiveData.length > 0 && <CompetitiveAnalysisChart data={competitiveData} />}
+          {/* Competitive Analysis Chart - Full Dataset */}
+          {competitiveData.length > 0 && (
+            <div>
+              <div className="mb-2">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                  Competitive Analysis - Full Dataset ({competitiveData.length} records)
+                </Badge>
+              </div>
+              <CompetitiveAnalysisChart data={competitiveData} />
+            </div>
+          )}
 
-          {/* Darwin Projections Chart */}
-          {darwinData.length > 0 && <DarwinProjectionsChart data={darwinData} />}
+          {/* Darwin Projections Chart - Full Dataset */}
+          {darwinData.length > 0 && (
+            <div>
+              <div className="mb-2">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                  Darwin Projections - Full Dataset ({darwinData.length} records)
+                </Badge>
+              </div>
+              <DarwinProjectionsChart data={darwinData} />
+            </div>
+          )}
 
-          {/* Pacing Trend Chart */}
-          {stationData.length > 0 && <PacingTrendChart data={stationData} />}
+          {/* Pacing Trend Chart - Full Dataset */}
+          {pacingData.length > 0 && (
+            <div>
+              <div className="mb-2">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                  Pacing Data - Full Dataset ({pacingData.length} records)
+                </Badge>
+              </div>
+              <PacingTrendChart data={pacingData} />
+            </div>
+          )}
 
           {/* Show message if no data */}
           {!isRealData && (
@@ -314,9 +352,9 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
                 <div className="text-sm text-gray-600">
                   <p>Expected tables:</p>
                   <ul className="list-disc list-inside mt-2">
-                    <li>_temp."Competitive Analysis_250624-1224_AgyAdv"</li>
-                    <li>_temp."darwin-sales-projections-20250624_Cris View"</li>
-                    <li>_temp."Pacing_250624-1221_Adv"</li>
+                    <li>_temp.competitive_analysis</li>
+                    <li>_temp.darwin_projections</li>
+                    <li>_temp.pacing_data</li>
                   </ul>
                   <p className="mt-2 text-blue-600">Try adjusting your filters or check data availability.</p>
                 </div>

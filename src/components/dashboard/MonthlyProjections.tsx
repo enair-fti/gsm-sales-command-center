@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +53,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
     return 0;
   };
 
-  // Format numbers for display
+  // Format numbers for display with M/K notation
   const formatCurrency = (value: number): string => {
     if (value >= 1000000) {
       return `$${(value / 1000000).toFixed(1)}M`;
@@ -100,10 +99,11 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching full Darwin projections dataset with filters:', filters);
+        console.log('Fetching complete Darwin projections dataset with filters:', filters);
         
+        // Fetch ALL data - no limits applied
         let data = await fetchDarwinProjections(filters);
-        console.log('Raw Darwin data received:', data.length, 'records (full dataset)');
+        console.log('Raw Darwin data received:', data.length, 'records (complete dataset)');
         
         // Transform and calculate metrics from real data
         const transformedData = data.map((item: any) => {
@@ -136,7 +136,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           };
         });
 
-        console.log('Transformed data:', transformedData.length, 'records (full dataset)');
+        console.log('Transformed data:', transformedData.length, 'records (complete dataset)');
 
         // Apply additional filters
         let filteredData = transformedData;
@@ -156,7 +156,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
 
         setProjectionsData(filteredData);
 
-        // Calculate real metrics from full dataset
+        // Calculate real metrics from complete dataset
         const totalBilling = filteredData.reduce((sum, item) => sum + item.billing, 0);
         const totalProjected = filteredData.reduce((sum, item) => sum + item.projectedBilling, 0);
         const totalMarketActual = filteredData.reduce((sum, item) => sum + item.actualMarket, 0);
@@ -172,11 +172,11 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           advertisers: filteredData.length
         });
 
-        // Calculate category breakdown from full dataset
+        // Calculate category breakdown from complete dataset
         const categoryBreakdown = calculateCategoryBreakdown(filteredData);
         setPieData(categoryBreakdown);
 
-        console.log('Calculated metrics from full dataset:', {
+        console.log('Calculated metrics from complete dataset:', {
           totalBilling: formatCurrency(totalBilling),
           totalProjected: formatCurrency(totalProjected),
           avgAttainment: avgAttainment.toFixed(1) + '%',
@@ -229,7 +229,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading full projections dataset from Darwin system...</div>
+        <div className="text-lg text-gray-600">Loading complete projections dataset from Darwin system...</div>
       </div>
     );
   }
@@ -239,8 +239,8 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       {/* Header with Filters */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Monthly Projections (Darwin System - Full Dataset)</h2>
-          <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE - Live Data (No Limits)</p>
+          <h2 className="text-xl font-bold text-gray-900">Monthly Projections (Darwin System - Complete Dataset)</h2>
+          <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE - Live Data (No Row Limits)</p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
@@ -257,7 +257,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
             </Select>
           </div>
           <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-200">
-            {filteredData.length} Live Records (Full Dataset)
+            {filteredData.length} Live Records (Complete Dataset)
           </Badge>
         </div>
       </div>
@@ -343,10 +343,10 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       {pieData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Category Distribution (Full Dataset - Live Data)</CardTitle>
+            <CardTitle>Category Distribution (Complete Dataset - Live Data)</CardTitle>
             <CardDescription>
               <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                Real Data - Full category breakdown from Darwin system ({pieData.length} categories)
+                Real Data - Complete category breakdown from Darwin system ({pieData.length} categories)
               </Badge>
             </CardDescription>
           </CardHeader>
@@ -369,10 +369,10 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         </Card>
       )}
 
-      {/* Projections Table - Show all data */}
+      {/* Projections Table - Show complete data */}
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Projections by Advertiser & AE (Full Dataset - Live Data)</CardTitle>
+          <CardTitle>Monthly Projections by Advertiser & AE (Complete Dataset - Live Data)</CardTitle>
           <CardDescription>Real billing performance vs projections with market context from Darwin system - All {filteredData.length} records</CardDescription>
         </CardHeader>
         <CardContent>
