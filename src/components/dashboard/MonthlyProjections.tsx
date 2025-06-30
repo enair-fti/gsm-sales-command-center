@@ -102,7 +102,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   const categoryBreakdown = filteredData.reduce((acc, item) => {
     const category = item.category || 'Uncategorized';
     const billingValue = Number(item.billing) || 0;
-    const currentValue = Number(acc[category]) || 0;
+    const currentValue = Number(acc[category] || 0);
     acc[category] = currentValue + billingValue;
     return acc;
   }, {} as Record<string, number>);
