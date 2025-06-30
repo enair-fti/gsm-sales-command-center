@@ -122,9 +122,6 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         <div>
           <h2 className="text-xl font-bold text-gray-900">Monthly Projections (Darwin System)</h2>
           <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE</p>
-          <Badge variant="outline" className="text-xs mt-1 bg-yellow-50 text-yellow-700 border-yellow-200">
-            Mock Data - Category breakdown uses sample data
-          </Badge>
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
