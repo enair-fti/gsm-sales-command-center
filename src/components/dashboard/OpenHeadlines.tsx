@@ -27,26 +27,52 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
         setLoading(true);
         let data = await fetchHeadlineData(filters);
         
-        // Apply case-insensitive filters
+        console.log('Raw data from fetchHeadlineData:', data.length, 'records');
+        console.log('Sample market values:', data.slice(0, 5).map(item => item.market));
+        
+        // Apply case-insensitive filters with better matching logic
         if (filters.agency && !filters.agency.startsWith('All')) {
+          const agencyFilter = filters.agency.toLowerCase();
           data = data.filter(item => 
-            item.access_name && item.access_name.toLowerCase().includes(filters.agency.toLowerCase())
+            item.access_name && item.access_name.toLowerCase().includes(agencyFilter)
           );
+          console.log('After agency filter:', data.length, 'records');
         }
+        
         if (filters.advertiser && !filters.advertiser.startsWith('All')) {
+          const advertiserFilter = filters.advertiser.toLowerCase();
           data = data.filter(item => 
-            item.client_name && item.client_name.toLowerCase().includes(filters.advertiser.toLowerCase())
+            item.client_name && item.client_name.toLowerCase().includes(advertiserFilter)
           );
+          console.log('After advertiser filter:', data.length, 'records');
         }
+        
         if (filters.station && !filters.station.startsWith('All')) {
+          const stationFilter = filters.station.toLowerCase();
           data = data.filter(item => 
-            item.station_name && item.station_name.toLowerCase().includes(filters.station.toLowerCase())
+            (item.station_name && item.station_name.toLowerCase().includes(stationFilter)) ||
+            (item.station_code && item.station_code.toLowerCase().includes(stationFilter))
           );
+          console.log('After station filter:', data.length, 'records');
         }
+        
         if (filters.market && !filters.market.startsWith('All')) {
-          data = data.filter(item => 
-            item.market && item.market.toLowerCase().includes(filters.market.toLowerCase())
-          );
+          const marketFilter = filters.market.toLowerCase();
+          data = data.filter(item => {
+            if (!item.market) return false;
+            const itemMarket = item.market.toLowerCase();
+            
+            // Try multiple matching strategies
+            return itemMarket.includes(marketFilter) || 
+                   marketFilter.includes(itemMarket) ||
+                   // Handle cases like "Boston (Manchester)" vs "Boston" or "Manchester"
+                   (marketFilter.includes('(') && 
+                    (itemMarket.includes(marketFilter.split('(')[0].trim()) ||
+                     itemMarket.includes(marketFilter.match(/\(([^)]+)\)/)?.[1] || '')));
+          });
+          console.log('After market filter:', data.length, 'records');
+          console.log('Market filter applied:', filters.market);
+          console.log('Remaining market values:', [...new Set(data.map(item => item.market))]);
         }
         
         setHeadlineData(data);
