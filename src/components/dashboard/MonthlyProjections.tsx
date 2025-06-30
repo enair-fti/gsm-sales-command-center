@@ -44,7 +44,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
 
   // Calculate category breakdown from real data
   const calculateCategoryBreakdown = (data: any[]) => {
-    const categoryTotals = data.reduce((acc: any, item: any) => {
+    const categoryTotals: Record<string, number> = data.reduce((acc, item: any) => {
       const category = item.category || 'Other';
       const billingValue = item.billing;
       // Safely convert billing to number, handling unknown types
@@ -56,20 +56,18 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       }
       acc[category] += billing;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
-    const totalValue = Object.values(categoryTotals).reduce((sum: number, value: any) => {
-      const numValue = typeof value === 'number' ? value : 0;
-      return sum + numValue;
+    const totalValue = Object.values(categoryTotals).reduce((sum: number, value: number) => {
+      return sum + value;
     }, 0);
     
     return Object.entries(categoryTotals)
-      .map(([category, value]: [string, any]) => {
-        const numValue = typeof value === 'number' ? value : 0;
+      .map(([category, value]: [string, number]) => {
         return {
           name: category,
-          value: numValue,
-          percentage: totalValue > 0 ? ((numValue / totalValue) * 100).toFixed(1) : '0'
+          value: value,
+          percentage: totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0'
         };
       })
       .sort((a, b) => b.value - a.value)
