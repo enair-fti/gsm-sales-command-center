@@ -16,6 +16,7 @@ const Index = () => {
     agency: 'All Agencies',
     advertiser: 'All Advertisers',
     station: 'All Stations',
+    market: 'All Markets',
     quarter: 'All Quarters',
     year: 'All Years'
   });
@@ -37,6 +38,7 @@ const Index = () => {
       agency: 'All Agencies',
       advertiser: 'All Advertisers',
       station: 'All Stations',
+      market: 'All Markets',
       quarter: 'All Quarters',
       year: 'All Years'
     };
@@ -63,10 +65,11 @@ const Index = () => {
               className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option>All Stations</option>
-              <option>Providence</option>
-              <option>Boston Metro</option>
-              <option>Hartford</option>
-              <option>Springfield</option>
+              <option>WPRO</option>
+              <option>WBRU</option>
+              <option>WKFD</option>
+              <option>WXKS</option>
+              <option>WFHN</option>
             </select>
             <div className="text-right">
               <div className="text-sm font-medium text-gray-900">Q4 2024</div>

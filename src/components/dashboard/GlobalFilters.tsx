@@ -9,6 +9,7 @@ interface GlobalFiltersProps {
     agency: string;
     advertiser: string;
     station: string;
+    market: string;
     quarter: string;
     year: string;
   };
@@ -21,9 +22,11 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
   onFilterChange,
   onClearFilters
 }) => {
+  // Static data for now - these should come from Supabase queries
   const agencies = ['All Agencies', 'Zenith Media', 'GroupM', 'Publicis', 'Omnicom', 'Havas'];
   const advertisers = ['All Advertisers', 'Toyota', 'McDonald\'s', 'Coca-Cola', 'Walmart', 'Apple'];
-  const stations = ['All Stations', 'Providence', 'Boston Metro', 'Hartford', 'Springfield'];
+  const stations = ['All Stations', 'WPRO', 'WBRU', 'WKFD', 'WXKS', 'WFHN'];
+  const markets = ['All Markets', 'Providence', 'Boston Metro', 'Hartford', 'Springfield', 'Sinclair'];
   const quarters = ['All Quarters', 'Q1', 'Q2', 'Q3', 'Q4'];
   const years = ['All Years', '2024', '2025'];
 
@@ -50,13 +53,13 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-5 gap-4 mb-3">
+        <div className="grid grid-cols-6 gap-4 mb-3">
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Agency</label>
             <select
               value={filters.agency}
               onChange={(e) => onFilterChange('agency', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               {agencies.map(agency => (
                 <option key={agency} value={agency}>{agency}</option>
@@ -69,7 +72,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
             <select
               value={filters.advertiser}
               onChange={(e) => onFilterChange('advertiser', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               {advertisers.map(advertiser => (
                 <option key={advertiser} value={advertiser}>{advertiser}</option>
@@ -82,10 +85,23 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
             <select
               value={filters.station}
               onChange={(e) => onFilterChange('station', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               {stations.map(station => (
                 <option key={station} value={station}>{station}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-600 mb-1 block">Market</label>
+            <select
+              value={filters.market}
+              onChange={(e) => onFilterChange('market', e.target.value)}
+              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {markets.map(market => (
+                <option key={market} value={market}>{market}</option>
               ))}
             </select>
           </div>
@@ -95,7 +111,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
             <select
               value={filters.quarter}
               onChange={(e) => onFilterChange('quarter', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               {quarters.map(quarter => (
                 <option key={quarter} value={quarter}>{quarter}</option>
@@ -108,7 +124,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
             <select
               value={filters.year}
               onChange={(e) => onFilterChange('year', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               {years.map(year => (
                 <option key={year} value={year}>{year}</option>
