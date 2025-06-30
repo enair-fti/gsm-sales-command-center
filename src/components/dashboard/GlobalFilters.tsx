@@ -4,13 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Filter, X } from 'lucide-react';
 import { fetchReferenceData, ReferenceData } from '@/utils/referenceData';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox, ComboboxOption } from '@/components/ui/combobox';
 
 interface GlobalFiltersProps {
   filters: {
@@ -65,6 +59,9 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
     value && !value.startsWith('All')
   );
 
+  const createOptions = (items: string[]): ComboboxOption[] => 
+    items.map(item => ({ value: item, label: item }));
+
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
@@ -88,146 +85,98 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
         <div className="grid grid-cols-4 gap-4 mb-3">
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Agency</label>
-            <Select
+            <Combobox
+              options={createOptions(referenceData.agencies)}
               value={filters.agency}
               onValueChange={(value) => onFilterChange('agency', value)}
+              placeholder="Select Agency"
+              searchPlaceholder="Search agencies..."
               disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Agency" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.agencies.map(agency => (
-                  <SelectItem key={agency} value={agency}>{agency}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Advertiser</label>
-            <Select
+            <Combobox
+              options={createOptions(referenceData.advertisers)}
               value={filters.advertiser}
               onValueChange={(value) => onFilterChange('advertiser', value)}
+              placeholder="Select Advertiser"
+              searchPlaceholder="Search advertisers..."
               disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Advertiser" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.advertisers.map(advertiser => (
-                  <SelectItem key={advertiser} value={advertiser}>{advertiser}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Station</label>
-            <Select
+            <Combobox
+              options={createOptions(referenceData.stations)}
               value={filters.station}
               onValueChange={(value) => onFilterChange('station', value)}
+              placeholder="Select Station"
+              searchPlaceholder="Search stations..."
               disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Station" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.stations.map(station => (
-                  <SelectItem key={station} value={station}>{station}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Market</label>
-            <Select
+            <Combobox
+              options={createOptions(referenceData.markets)}
               value={filters.market}
               onValueChange={(value) => onFilterChange('market', value)}
+              placeholder="Select Market"
+              searchPlaceholder="Search markets..."
               disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Market" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.markets.map(market => (
-                  <SelectItem key={market} value={market}>{market}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-3">
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Category</label>
-            <Select
+            <Combobox
+              options={createOptions(referenceData.categories)}
               value={filters.category}
               onValueChange={(value) => onFilterChange('category', value)}
+              placeholder="Select Category"
+              searchPlaceholder="Search categories..."
               disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">AE Name</label>
-            <Select
+            <Combobox
+              options={createOptions(referenceData.aeNames)}
               value={filters.aeName}
               onValueChange={(value) => onFilterChange('aeName', value)}
+              placeholder="Select AE"
+              searchPlaceholder="Search AE names..."
               disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select AE" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.aeNames.map(aeName => (
-                  <SelectItem key={aeName} value={aeName}>{aeName}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Quarter</label>
-            <Select
+            <Combobox
+              options={createOptions(quarters)}
               value={filters.quarter}
               onValueChange={(value) => onFilterChange('quarter', value)}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Quarter" />
-              </SelectTrigger>
-              <SelectContent>
-                {quarters.map(quarter => (
-                  <SelectItem key={quarter} value={quarter}>{quarter}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select Quarter"
+              searchPlaceholder="Search quarters..."
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Year</label>
-            <Select
+            <Combobox
+              options={createOptions(years)}
               value={filters.year}
               onValueChange={(value) => onFilterChange('year', value)}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Year" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map(year => (
-                  <SelectItem key={year} value={year}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select Year"
+              searchPlaceholder="Search years..."
+            />
           </div>
         </div>
 
