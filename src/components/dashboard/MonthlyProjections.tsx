@@ -35,6 +35,16 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
 
+  // Mock data for pie chart
+  const mockPieData = [
+    { name: 'Automotive', value: 125000, percentage: '28.5' },
+    { name: 'Healthcare', value: 98000, percentage: '22.3' },
+    { name: 'Retail', value: 87000, percentage: '19.8' },
+    { name: 'Real Estate', value: 65000, percentage: '14.8' },
+    { name: 'Financial', value: 42000, percentage: '9.6' },
+    { name: 'Entertainment', value: 22000, percentage: '5.0' }
+  ];
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -97,21 +107,6 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
     totalMarketProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedMarket) || 0), 0),
     advertisers: filteredData.length
   };
-
-  // Calculate category breakdown for pie chart
-  const categoryBreakdown = filteredData.reduce((acc, item) => {
-    const category = item.category || 'Uncategorized';
-    const billingValue = Number(item.billing) || 0;
-    const currentValue = Number(acc[category] || 0);
-    acc[category] = currentValue + billingValue;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const pieData = Object.entries(categoryBreakdown).map(([category, value]) => ({
-    name: category,
-    value,
-    percentage: ((value / summaryData.totalBilling) * 100).toFixed(1)
-  }));
 
   if (loading) {
     return (
@@ -200,7 +195,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieData}
+                    data={mockPieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={20}
@@ -208,7 +203,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {pieData.map((entry, index) => (
+                    {mockPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -227,7 +222,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-4">
-            {pieData.map((entry, index) => (
+            {mockPieData.map((entry, index) => (
               <div key={entry.name} className="flex items-center space-x-2">
                 <div 
                   className="w-4 h-4 rounded-full"
