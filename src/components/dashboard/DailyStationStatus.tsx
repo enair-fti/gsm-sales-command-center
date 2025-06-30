@@ -34,6 +34,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
   const [pacingData, setPacingData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRealData, setIsRealData] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const [kpiMetrics, setKpiMetrics] = useState({
     salesDollars: 0,
     pacing: 0,
@@ -41,11 +42,142 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
     monthProgress: 84
   });
 
+  // Generate mock data functions
+  const generateMockDarwinData = () => [
+    {
+      stationCode: 'WPRO-FM',
+      station: 'WPRO-FM',
+      market: 'Providence',
+      advertiser: 'AutoNation',
+      aeName: 'Mike Sullivan',
+      agency: 'GroupM',
+      billing: 45200,
+      projectedBilling: 52000,
+      projectedMarket: 180000,
+      actualMarket: 165000,
+      variance: 6800,
+      category: 'Automotive',
+      quarter: 'Q3-2025',
+      projectedShare: 15.2
+    },
+    {
+      stationCode: 'WBRU-FM',
+      station: 'WBRU-FM',
+      market: 'Providence',
+      advertiser: 'Regional Medical Center',
+      aeName: 'Lisa Rodriguez',
+      agency: 'Zenith Media',
+      billing: 38700,
+      projectedBilling: 41000,
+      projectedMarket: 220000,
+      actualMarket: 205000,
+      variance: 2300,
+      category: 'Healthcare',
+      quarter: 'Q3-2025',
+      projectedShare: 12.8
+    },
+    {
+      stationCode: 'WKFD-FM',
+      station: 'WKFD-FM',
+      market: 'Hartford',
+      advertiser: 'Premier Real Estate',
+      aeName: 'James Wilson',
+      agency: 'Direct',
+      billing: 32500,
+      projectedBilling: 35000,
+      projectedMarket: 150000,
+      actualMarket: 142000,
+      variance: 2500,
+      category: 'Real Estate',
+      quarter: 'Q3-2025',
+      projectedShare: 18.5
+    }
+  ];
+
+  const generateMockCompetitiveData = () => [
+    {
+      Month: 'Jan 2024',
+      Agency: 'GroupM',
+      Advertiser: 'Toyota Motors',
+      '# Headlines': '45',
+      'Billing $': '485000',
+      'Mkt $': '2100000',
+      'Rep %': '23.1',
+      Custom: 'High Priority'
+    },
+    {
+      Month: 'Feb 2024',
+      Agency: 'Zenith Media',
+      Advertiser: 'McDonald\'s Corporation',
+      '# Headlines': '38',
+      'Billing $': '423000',
+      'Mkt $': '1850000',
+      'Rep %': '22.9',
+      Custom: 'Standard'
+    },
+    {
+      Month: 'Mar 2024',
+      Agency: 'Direct',
+      Advertiser: 'Local Auto Dealer',
+      '# Headlines': '52',
+      'Billing $': '380000',
+      'Mkt $': '1900000',
+      'Rep %': '20.0',
+      Custom: 'Growth'
+    }
+  ];
+
+  const generateMockPacingData = () => [
+    {
+      Month: 'Jan 2024',
+      Advertiser: 'Toyota Motors',
+      'Sales $': '485000',
+      Projection: '450000',
+      'Last Year': '410000',
+      '% Pacing': '107.8',
+      Variance: '35000',
+      'Change vs LY': '75000'
+    },
+    {
+      Month: 'Feb 2024',
+      Advertiser: 'McDonald\'s Corporation',
+      'Sales $': '423000',
+      Projection: '420000',
+      'Last Year': '395000',
+      '% Pacing': '100.7',
+      Variance: '3000',
+      'Change vs LY': '28000'
+    },
+    {
+      Month: 'Mar 2024',
+      Advertiser: 'Local Auto Dealer',
+      'Sales $': '380000',
+      Projection: '365000',
+      'Last Year': '352000',
+      '% Pacing': '104.1',
+      Variance: '15000',
+      'Change vs LY': '28000'
+    }
+  ];
+
+  const generateMockMonthlyData = () => [
+    { month: 'Jan 24', booked: 378000, projection: 365000, lastYear: 352000, pace: 103.6, variance: 13000, changeVsLastYear: 26000 },
+    { month: 'Feb 24', booked: 423000, projection: 420000, lastYear: 395000, pace: 100.7, variance: 3000, changeVsLastYear: 28000 },
+    { month: 'Mar 24', booked: 390000, projection: 385000, lastYear: 365000, pace: 101.3, variance: 5000, changeVsLastYear: 25000 },
+    { month: 'Apr 24', booked: 435000, projection: 425000, lastYear: 400000, pace: 102.4, variance: 10000, changeVsLastYear: 35000 },
+    { month: 'May 24', booked: 412000, projection: 400000, lastYear: 385000, pace: 103.0, variance: 12000, changeVsLastYear: 27000 },
+    { month: 'Jun 24', booked: 445000, projection: 440000, lastYear: 420000, pace: 101.1, variance: 5000, changeVsLastYear: 25000 },
+    { month: 'Jul 24', booked: 428000, projection: 415000, lastYear: 395000, pace: 103.1, variance: 13000, changeVsLastYear: 33000 },
+    { month: 'Aug 24', booked: 456000, projection: 450000, lastYear: 430000, pace: 101.3, variance: 6000, changeVsLastYear: 26000 },
+    { month: 'Sep 24', booked: 468000, projection: 460000, lastYear: 445000, pace: 101.7, variance: 8000, changeVsLastYear: 23000 }
+  ];
+
   // Fetch all data sources
   useEffect(() => {
     const fetchAllData = async () => {
       try {
         setLoading(true);
+        setHasError(false);
         
         // Fetch all data sources in parallel
         const [darwinProjections, competitiveAnalysis, pacingInfo] = await Promise.all([
@@ -58,47 +190,55 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
         console.log('Fetched competitive analysis:', competitiveAnalysis.length);
         console.log('Fetched pacing data:', pacingInfo.length);
         
-        setDarwinData(darwinProjections);
-        setCompetitiveData(competitiveAnalysis);
-        setPacingData(pacingInfo);
-        
         // Check if we have real data
         const hasRealData = darwinProjections.length > 0 || competitiveAnalysis.length > 0 || pacingInfo.length > 0;
-        setIsRealData(hasRealData);
         
-        // Calculate monthly performance data from available sources
-        const monthlyPerformance = await calculateMonthlyPerformanceData(darwinProjections, pacingInfo);
-        setStationData(monthlyPerformance);
-        
-        // Calculate KPI metrics from available data
-        if (pacingInfo.length > 0) {
-          // Use pacing data for KPIs
-          const totalSales = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Sales $']?.toString().replace(/[,$]/g, '')) || 0), 0);
-          const totalProjection = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Projection']?.toString().replace(/[,$]/g, '')) || 0), 0);
-          const totalLastYear = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Last Year']?.toString().replace(/[,$]/g, '')) || 0), 0);
-          const avgPacing = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['% Pacing']?.toString().replace(/%/g, '')) || 0), 0) / pacingInfo.length;
+        if (hasRealData) {
+          setDarwinData(darwinProjections);
+          setCompetitiveData(competitiveAnalysis);
+          setPacingData(pacingInfo);
+          setIsRealData(true);
           
-          setKpiMetrics({
-            salesDollars: totalSales,
-            pacing: avgPacing,
-            changeVsLastYear: totalSales - totalLastYear,
-            monthProgress: 84
-          });
-        } else if (darwinProjections.length > 0) {
-          // Fallback to Darwin data for KPIs
-          const totalBilling = darwinProjections.reduce((sum, item) => sum + item.billing, 0);
-          const totalProjected = darwinProjections.reduce((sum, item) => sum + item.projectedBilling, 0);
-          const totalLastYear = totalBilling * 0.85;
-          const pacing = totalProjected > 0 ? (totalBilling / totalProjected) * 100 : 0;
+          // Calculate monthly performance data from available sources
+          const monthlyPerformance = await calculateMonthlyPerformanceData(darwinProjections, pacingInfo);
+          setStationData(monthlyPerformance);
           
-          setKpiMetrics({
-            salesDollars: totalBilling,
-            pacing: pacing,
-            changeVsLastYear: totalBilling - totalLastYear,
-            monthProgress: 84
-          });
+          // Calculate KPI metrics from available data
+          if (pacingInfo.length > 0) {
+            const totalSales = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Sales $']?.toString().replace(/[,$]/g, '')) || 0), 0);
+            const totalProjection = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Projection']?.toString().replace(/[,$]/g, '')) || 0), 0);
+            const totalLastYear = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['Last Year']?.toString().replace(/[,$]/g, '')) || 0), 0);
+            const avgPacing = pacingInfo.reduce((sum, item) => sum + (parseFloat(item['% Pacing']?.toString().replace(/%/g, '')) || 0), 0) / pacingInfo.length;
+            
+            setKpiMetrics({
+              salesDollars: totalSales,
+              pacing: avgPacing,
+              changeVsLastYear: totalSales - totalLastYear,
+              monthProgress: 84
+            });
+          } else if (darwinProjections.length > 0) {
+            const totalBilling = darwinProjections.reduce((sum, item) => sum + item.billing, 0);
+            const totalProjected = darwinProjections.reduce((sum, item) => sum + item.projectedBilling, 0);
+            const totalLastYear = totalBilling * 0.85;
+            const pacing = totalProjected > 0 ? (totalBilling / totalProjected) * 100 : 0;
+            
+            setKpiMetrics({
+              salesDollars: totalBilling,
+              pacing: pacing,
+              changeVsLastYear: totalBilling - totalLastYear,
+              monthProgress: 84
+            });
+          }
         } else {
-          // Use mock data if no real data available
+          // Use mock data when no real data is available
+          setHasError(true);
+          setIsRealData(false);
+          setDarwinData(generateMockDarwinData());
+          setCompetitiveData(generateMockCompetitiveData());
+          setPacingData(generateMockPacingData());
+          setStationData(generateMockMonthlyData());
+          
+          // Set mock KPI metrics
           setKpiMetrics({
             salesDollars: 378000,
             pacing: 103.6,
@@ -109,7 +249,21 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
         
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setHasError(true);
         setIsRealData(false);
+        
+        // Fallback to mock data on error
+        setDarwinData(generateMockDarwinData());
+        setCompetitiveData(generateMockCompetitiveData());
+        setPacingData(generateMockPacingData());
+        setStationData(generateMockMonthlyData());
+        
+        setKpiMetrics({
+          salesDollars: 378000,
+          pacing: 103.6,
+          changeVsLastYear: 38000,
+          monthProgress: 84
+        });
       } finally {
         setLoading(false);
       }
@@ -211,8 +365,19 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
-          <Badge variant="outline" className={`text-xs ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-            {isRealData ? 'Real Data Connected' : 'Mock Data - No real data available'}
+          <Badge variant="outline" className={`text-xs ${
+            isRealData 
+              ? 'bg-green-50 text-green-700 border-green-200' 
+              : hasError 
+                ? 'bg-red-50 text-red-700 border-red-200'
+                : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+          }`}>
+            {isRealData 
+              ? 'Real Data Connected' 
+              : hasError 
+                ? 'Mock Data - Fetch error'
+                : 'Mock Data - No real data available'
+            }
           </Badge>
         </div>
       </div>
@@ -245,27 +410,21 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       {viewMode === 'charts' ? (
         <div className="space-y-6">
           {/* Competitive Analysis Chart */}
-          {competitiveData.length > 0 && (
-            <CompetitiveAnalysisChart data={competitiveData} />
-          )}
+          <CompetitiveAnalysisChart data={competitiveData} />
 
           {/* Darwin Projections Chart */}
-          {darwinData.length > 0 && (
-            <DarwinProjectionsChart data={darwinData} />
-          )}
+          <DarwinProjectionsChart data={darwinData} />
 
           {/* Pacing Trend Chart */}
-          {stationData.length > 0 && (
-            <PacingTrendChart data={stationData} />
-          )}
+          <PacingTrendChart data={stationData} />
 
-          {/* Show message if no data is available */}
-          {!isRealData && (
+          {/* Show error message if using mock data due to errors */}
+          {hasError && (
             <Card>
               <CardHeader>
-                <CardTitle>No Real Data Available</CardTitle>
+                <CardTitle>Using Mock Data Due to Fetch Error</CardTitle>
                 <CardDescription>
-                  Unable to connect to the _temp tables. Please check database permissions and table names.
+                  Unable to connect to the _temp tables. Database connection failed.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -276,6 +435,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
                     <li>_temp."darwin-sales-projections-20250624_Cris View"</li>
                     <li>_temp."Pacing_250624-1221_Adv"</li>
                   </ul>
+                  <p className="mt-2 text-yellow-600">Displaying mock data for demonstration purposes.</p>
                 </div>
               </CardContent>
             </Card>
