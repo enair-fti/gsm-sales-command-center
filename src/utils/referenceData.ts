@@ -40,13 +40,13 @@ export const fetchReferenceData = async (): Promise<ReferenceData> => {
       };
     }
 
-    // Extract unique values
-    const agencies = ['All Agencies', ...new Set((darwinData || []).map((item: any) => item['Agency Name']).filter(Boolean))];
-    const advertisers = ['All Advertisers', ...new Set((darwinData || []).map((item: any) => item['Advertiser Name']).filter(Boolean))];
-    const stations = ['All Stations', ...new Set((darwinData || []).map((item: any) => item['Station Code']).filter(Boolean))];
-    const markets = ['All Markets', ...new Set((darwinData || []).map((item: any) => item['Market']).filter(Boolean))];
-    const categories = ['All Categories', ...new Set((darwinData || []).map((item: any) => item['Category']).filter(Boolean))];
-    const aeNames = ['All AE Names', ...new Set((darwinData || []).map((item: any) => item['Seller Code']).filter(Boolean))];
+    // Extract unique values with proper type casting
+    const agencies = ['All Agencies', ...Array.from(new Set((darwinData || []).map((item: any) => item['Agency Name']).filter(Boolean))) as string[]];
+    const advertisers = ['All Advertisers', ...Array.from(new Set((darwinData || []).map((item: any) => item['Advertiser Name']).filter(Boolean))) as string[]];
+    const stations = ['All Stations', ...Array.from(new Set((darwinData || []).map((item: any) => item['Station Code']).filter(Boolean))) as string[]];
+    const markets = ['All Markets', ...Array.from(new Set((darwinData || []).map((item: any) => item['Market']).filter(Boolean))) as string[]];
+    const categories = ['All Categories', ...Array.from(new Set((darwinData || []).map((item: any) => item['Category']).filter(Boolean))) as string[]];
+    const aeNames = ['All AE Names', ...Array.from(new Set((darwinData || []).map((item: any) => item['Seller Code']).filter(Boolean))) as string[]];
 
     return {
       agencies,
