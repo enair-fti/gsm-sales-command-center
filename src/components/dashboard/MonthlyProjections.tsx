@@ -83,17 +83,17 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   };
 
   const summaryData = {
-    totalBilling: filteredData.reduce((sum, item) => sum + (item.billing || 0), 0),
-    totalProjected: filteredData.reduce((sum, item) => sum + (item.projectedBilling || 0), 0),
-    totalMarketActual: filteredData.reduce((sum, item) => sum + (item.actualMarket || 0), 0),
-    totalMarketProjected: filteredData.reduce((sum, item) => sum + (item.projectedMarket || 0), 0),
+    totalBilling: filteredData.reduce((sum, item) => sum + (Number(item.billing) || 0), 0),
+    totalProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedBilling) || 0), 0),
+    totalMarketActual: filteredData.reduce((sum, item) => sum + (Number(item.actualMarket) || 0), 0),
+    totalMarketProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedMarket) || 0), 0),
     advertisers: filteredData.length
   };
 
   // Calculate category breakdown for pie chart
   const categoryBreakdown = filteredData.reduce((acc, item) => {
     const category = item.category || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + (item.billing || 0);
+    acc[category] = (acc[category] || 0) + (Number(item.billing) || 0);
     return acc;
   }, {} as Record<string, number>);
 
