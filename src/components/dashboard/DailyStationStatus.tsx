@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +22,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
   const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('monthly');
   const [stationData, setStationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRealData, setIsRealData] = useState(false);
 
   // Fetch station performance data
   useEffect(() => {
@@ -30,26 +30,55 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       try {
         setLoading(true);
         
-        // Try to fetch Darwin projections data first
+        // Fetch Darwin projections data
         const darwinData = await fetchDarwinProjections(filters);
         console.log('Fetched Darwin projections for station status:', darwinData.length);
         
-        // Generate mock monthly data based on Darwin projections or use default mock data
-        const mockStationData = [
-          { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000, changeVsLastYear: 20000 },
-          { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000, changeVsLastYear: 28000 },
-          { month: 'Mar 24', booked: 289000, projection: 285000, lastYear: 255000, pace: 101.4, variance: 34000, changeVsLastYear: 34000 },
-          { month: 'Apr 24', booked: 312000, projection: 300000, lastYear: 270000, pace: 104.0, variance: 42000, changeVsLastYear: 42000 },
-          { month: 'May 24', booked: 298000, projection: 310000, lastYear: 285000, pace: 96.1, variance: 13000, changeVsLastYear: 13000 },
-          { month: 'Jun 24', booked: 334000, projection: 325000, lastYear: 295000, pace: 102.8, variance: 39000, changeVsLastYear: 39000 },
-          { month: 'Jul 24', booked: 356000, projection: 340000, lastYear: 310000, pace: 104.7, variance: 46000, changeVsLastYear: 46000 },
-          { month: 'Aug 24', booked: 345000, projection: 350000, lastYear: 320000, pace: 98.6, variance: 25000, changeVsLastYear: 25000 },
-          { month: 'Sep 24', booked: 378000, projection: 365000, lastYear: 340000, pace: 103.6, variance: 38000, changeVsLastYear: 38000 },
-        ];
+        // Check if we got real data or mock data
+        const hasRealData = darwinData.length > 0 && darwinData.some(item => 
+          item.station !== 'WPRO-FM' && item.station !== 'WBRU-FM' && item.station !== 'WKFD-FM'
+        );
+        setIsRealData(hasRealData);
         
-        setStationData(mockStationData);
+        if (hasRealData) {
+          // Transform Darwin data for monthly view
+          const transformedData = darwinData.slice(0, 9).map((item, index) => {
+            const months = ['Jan 24', 'Feb 24', 'Mar 24', 'Apr 24', 'May 24', 'Jun 24', 'Jul 24', 'Aug 24', 'Sep 24'];
+            const billing = item.billing || 0;
+            const projected = item.projectedBilling || 0;
+            const pace = projected > 0 ? (billing / projected) * 100 : 0;
+            
+            return {
+              month: months[index] || `Month ${index + 1}`,
+              booked: billing,
+              projection: projected,
+              lastYear: Math.floor(billing * 0.85), // Estimate last year as 85% of current
+              pace: pace,
+              variance: item.variance || 0,
+              changeVsLastYear: billing - Math.floor(billing * 0.85)
+            };
+          });
+          
+          setStationData(transformedData);
+        } else {
+          // Use mock data if no real data available
+          const mockStationData = [
+            { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000, changeVsLastYear: 20000 },
+            { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000, changeVsLastYear: 28000 },
+            { month: 'Mar 24', booked: 289000, projection: 285000, lastYear: 255000, pace: 101.4, variance: 34000, changeVsLastYear: 34000 },
+            { month: 'Apr 24', booked: 312000, projection: 300000, lastYear: 270000, pace: 104.0, variance: 42000, changeVsLastYear: 42000 },
+            { month: 'May 24', booked: 298000, projection: 310000, lastYear: 285000, pace: 96.1, variance: 13000, changeVsLastYear: 13000 },
+            { month: 'Jun 24', booked: 334000, projection: 325000, lastYear: 295000, pace: 102.8, variance: 39000, changeVsLastYear: 39000 },
+            { month: 'Jul 24', booked: 356000, projection: 340000, lastYear: 310000, pace: 104.7, variance: 46000, changeVsLastYear: 46000 },
+            { month: 'Aug 24', booked: 345000, projection: 350000, lastYear: 320000, pace: 98.6, variance: 25000, changeVsLastYear: 25000 },
+            { month: 'Sep 24', booked: 378000, projection: 365000, lastYear: 340000, pace: 103.6, variance: 38000, changeVsLastYear: 38000 },
+          ];
+          
+          setStationData(mockStationData);
+        }
       } catch (error) {
         console.error('Error fetching station data:', error);
+        setIsRealData(false);
       } finally {
         setLoading(false);
       }
@@ -152,8 +181,13 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             <span>Export</span>
           </button>
           <Badge variant="outline" className="text-sm">
-            Data Source: Darwin Projections
+            Data Source: {isRealData ? 'Darwin Projections' : 'Mock Data'}
           </Badge>
+          {!isRealData && (
+            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+              Mock Data - Sample projections data
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -185,7 +219,14 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       <Card>
         <CardHeader>
           <CardTitle>Sales Performance & Pacing (Darwin Data)</CardTitle>
-          <CardDescription>Monthly sales dollars vs. projections with pacing indicators from Darwin system</CardDescription>
+          <CardDescription>
+            Monthly sales dollars vs. projections with pacing indicators from Darwin system
+            {!isRealData && (
+              <Badge variant="outline" className="text-xs ml-2 bg-yellow-50 text-yellow-700 border-yellow-200">
+                Mock Data - Sample chart data
+              </Badge>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-80 mb-6">

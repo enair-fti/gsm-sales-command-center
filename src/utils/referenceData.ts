@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ReferenceData {
@@ -156,25 +155,55 @@ export async function fetchHeadlineData(filters: any = {}) {
   }
 }
 
-// New function to fetch Darwin sales projections
+// Updated function to fetch Darwin sales projections from the correct table
 export async function fetchDarwinProjections(filters: any = {}) {
   try {
     console.log('Fetching Darwin projections with filters:', filters);
     
-    // Try to fetch from the temp table first
-    const { data: darwinData, error: darwinError } = await supabase
+    // Fetch from the actual Darwin projections table
+    let query = supabase
       .from('_temp.darwin-sales-projections-20250624_Cris View')
-      .select('*')
-      .limit(100);
+      .select('*');
+
+    // Apply filters if they exist and are not "All"
+    if (filters.station && !filters.station.startsWith('All')) {
+      query = query.eq('Station Code', filters.station);
+    }
+    if (filters.agency && !filters.agency.startsWith('All')) {
+      query = query.eq('Agency Name', filters.agency);
+    }
+    if (filters.advertiser && !filters.advertiser.startsWith('All')) {
+      query = query.eq('Advertiser Name', filters.advertiser);
+    }
+
+    const { data: darwinData, error: darwinError } = await query.limit(100);
 
     if (darwinError) {
       console.error('Error fetching Darwin projections:', darwinError);
-      // Return mock data if the temp table doesn't exist
+      // Return mock data if the table query fails
       return generateMockDarwinData();
     }
 
-    console.log('Fetched Darwin projections:', darwinData?.length || 0, 'records');
-    return darwinData || generateMockDarwinData();
+    if (darwinData && darwinData.length > 0) {
+      console.log('Fetched Darwin projections:', darwinData.length, 'records');
+      // Transform the data to match the expected format for the components
+      return darwinData.map((row: any) => ({
+        station: row['Station Code'] || 'Unknown',
+        market: 'Unknown', // Not available in Darwin table
+        advertiser: row['Advertiser Name'] || 'Unknown',
+        aeName: row['Seller Code'] || 'Unknown',
+        agency: row['Agency Name'] || 'Unknown',
+        billing: parseInt(row['Q3-2025 Billing$']) || 0,
+        projectedBilling: parseInt(row['Proj Billing$']) || 0,
+        projectedMarket: parseInt(row['Proj Market$']) || 0,
+        actualMarket: parseInt(row['Q3-2025 Market$']) || 0,
+        variance: parseInt(row['Proj Diff$']) || 0,
+        category: 'Unknown' // Not available in Darwin table
+      }));
+    }
+
+    console.log('No Darwin projections data found, using mock data');
+    return generateMockDarwinData();
   } catch (error) {
     console.error('Error in fetchDarwinProjections:', error);
     return generateMockDarwinData();
