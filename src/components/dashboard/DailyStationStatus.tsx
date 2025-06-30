@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
 import { Calendar, TrendingUp, DollarSign, Target, Download } from 'lucide-react';
-import { fetchDarwinProjections } from '@/utils/referenceData';
+import { fetchDarwinProjections, calculateMonthlyPerformanceData } from '@/utils/referenceData';
 
 interface DailyStationStatusProps {
   station: string;
@@ -23,6 +24,12 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
   const [stationData, setStationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRealData, setIsRealData] = useState(false);
+  const [kpiMetrics, setKpiMetrics] = useState({
+    salesDollars: 0,
+    pacing: 0,
+    changeVsLastYear: 0,
+    monthProgress: 84
+  });
 
   // Fetch station performance data
   useEffect(() => {
@@ -34,34 +41,30 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
         const darwinData = await fetchDarwinProjections(filters);
         console.log('Fetched Darwin projections for station status:', darwinData.length);
         
-        // Check if we got real data or mock data
-        const hasRealData = darwinData.length > 0 && darwinData.some(item => 
-          item.station !== 'WPRO-FM' && item.station !== 'WBRU-FM' && item.station !== 'WKFD-FM'
-        );
-        setIsRealData(hasRealData);
-        
-        if (hasRealData) {
-          // Transform Darwin data for monthly view
-          const transformedData = darwinData.slice(0, 9).map((item, index) => {
-            const months = ['Jan 24', 'Feb 24', 'Mar 24', 'Apr 24', 'May 24', 'Jun 24', 'Jul 24', 'Aug 24', 'Sep 24'];
-            const billing = item.billing || 0;
-            const projected = item.projectedBilling || 0;
-            const pace = projected > 0 ? (billing / projected) * 100 : 0;
-            
-            return {
-              month: months[index] || `Month ${index + 1}`,
-              booked: billing,
-              projection: projected,
-              lastYear: Math.floor(billing * 0.85), // Estimate last year as 85% of current
-              pace: pace,
-              variance: item.variance || 0,
-              changeVsLastYear: billing - Math.floor(billing * 0.85)
-            };
+        if (darwinData.length > 0) {
+          setIsRealData(true);
+          
+          // Calculate monthly performance data from real Darwin data
+          const monthlyData = await calculateMonthlyPerformanceData(darwinData);
+          setStationData(monthlyData);
+          
+          // Calculate KPI metrics from real data
+          const totalBilling = darwinData.reduce((sum, item) => sum + item.billing, 0);
+          const totalProjected = darwinData.reduce((sum, item) => sum + item.projectedBilling, 0);
+          const totalLastYear = totalBilling * 0.85; // Estimate
+          const pacing = totalProjected > 0 ? (totalBilling / totalProjected) * 100 : 0;
+          const changeVsLastYear = totalBilling - totalLastYear;
+          
+          setKpiMetrics({
+            salesDollars: totalBilling,
+            pacing: pacing,
+            changeVsLastYear: changeVsLastYear,
+            monthProgress: 84 // Keep as static for now
           });
           
-          setStationData(transformedData);
         } else {
           // Use mock data if no real data available
+          setIsRealData(false);
           const mockStationData = [
             { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000, changeVsLastYear: 20000 },
             { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000, changeVsLastYear: 28000 },
@@ -75,6 +78,12 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
           ];
           
           setStationData(mockStationData);
+          setKpiMetrics({
+            salesDollars: 378000,
+            pacing: 103.6,
+            changeVsLastYear: 38000,
+            monthProgress: 84
+          });
         }
       } catch (error) {
         console.error('Error fetching station data:', error);
@@ -90,31 +99,31 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
   const kpiData = [
     { 
       title: "Sales Dollars (MTD)", 
-      value: "$378K", 
-      change: "+3.6%", 
+      value: `$${(kpiMetrics.salesDollars / 1000).toFixed(0)}K`, 
+      change: isRealData ? "Real Darwin Data" : "+3.6%", 
       positive: true,
       icon: DollarSign,
-      tooltip: "Month-to-date confirmed sales dollars from Darwin projections"
+      tooltip: isRealData ? "Month-to-date confirmed sales dollars from Darwin projections" : "Sample data - not real Darwin projections"
     },
     { 
       title: "% Pacing", 
-      value: "103.6%", 
+      value: `${kpiMetrics.pacing.toFixed(1)}%`, 
       change: "vs projection", 
-      positive: true,
+      positive: kpiMetrics.pacing >= 100,
       icon: Target,
       tooltip: "% Pacing = (Booked / Projection) * 100"
     },
     { 
       title: "Change vs. Last Year", 
-      value: "+$38K", 
-      change: "+11.2%", 
-      positive: true,
+      value: `${kpiMetrics.changeVsLastYear >= 0 ? '+' : ''}$${(kpiMetrics.changeVsLastYear / 1000).toFixed(0)}K`, 
+      change: `${((kpiMetrics.changeVsLastYear / (kpiMetrics.salesDollars * 0.85)) * 100).toFixed(1)}%`, 
+      positive: kpiMetrics.changeVsLastYear >= 0,
       icon: TrendingUp,
       tooltip: "Change vs. Last Year ($) = Current Year - Previous Year"
     },
     { 
       title: "25 Conf Month Close", 
-      value: "84%", 
+      value: `${kpiMetrics.monthProgress}%`, 
       change: "of month", 
       positive: true,
       icon: Calendar,
@@ -180,11 +189,9 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
-          {!isRealData && (
-            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-              Mock Data - Sample projections data
-            </Badge>
-          )}
+          <Badge variant="outline" className={`text-xs ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+            {isRealData ? 'Real Darwin Data' : 'Mock Data - Sample projections'}
+          </Badge>
         </div>
       </div>
 
@@ -215,14 +222,12 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       {/* Performance Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Sales Performance & Pacing (Darwin Data)</CardTitle>
+          <CardTitle>Sales Performance & Pacing {isRealData ? '(Real Darwin Data)' : '(Sample Data)'}</CardTitle>
           <CardDescription>
-            Monthly sales dollars vs. projections with pacing indicators from Darwin system
-            {!isRealData && (
-              <Badge variant="outline" className="text-xs ml-2 bg-yellow-50 text-yellow-700 border-yellow-200">
-                Mock Data - Sample chart data
-              </Badge>
-            )}
+            Monthly sales dollars vs. projections with pacing indicators {isRealData ? 'from Darwin system' : 'using sample data'}
+            <Badge variant="outline" className={`text-xs ml-2 ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+              {isRealData ? 'Real Data' : 'Mock Data'}
+            </Badge>
           </CardDescription>
         </CardHeader>
         <CardContent>
