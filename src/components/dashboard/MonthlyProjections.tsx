@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -93,14 +92,15 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   // Calculate category breakdown for pie chart
   const categoryBreakdown = filteredData.reduce((acc, item) => {
     const category = item.category || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + (Number(item.billing) || 0);
+    const billingValue = Number(item.billing) || 0;
+    acc[category] = (acc[category] || 0) + billingValue;
     return acc;
   }, {} as Record<string, number>);
 
   const pieData = Object.entries(categoryBreakdown).map(([category, value]) => ({
     name: category,
     value,
-    percentage: summaryData.totalBilling > 0 ? ((value / summaryData.totalBilling) * 100).toFixed(1) : "0.0"
+    percentage: summaryData.totalBilling > 0 ? ((Number(value) / summaryData.totalBilling) * 100).toFixed(1) : "0.0"
   }));
 
   if (loading) {
