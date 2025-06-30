@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ interface MonthlyProjectionsProps {
     agency: string;
     advertiser: string;
     station: string;
+    category: string;
     aeName: string;
     quarter: string;
     year: string;
@@ -41,6 +43,9 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         }
         if (filters.station && !filters.station.startsWith('All')) {
           data = data.filter(item => item.station === filters.station);
+        }
+        if (filters.category && !filters.category.startsWith('All')) {
+          data = data.filter(item => item.category === filters.category);
         }
         if (filters.aeName && !filters.aeName.startsWith('All')) {
           data = data.filter(item => item.aeName === filters.aeName);
@@ -82,25 +87,24 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   };
 
   const summaryData = {
-    totalBilling: filteredData.reduce((sum, item) => sum + (Number(item.billing) || 0), 0),
-    totalProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedBilling) || 0), 0),
-    totalMarketActual: filteredData.reduce((sum, item) => sum + (Number(item.actualMarket) || 0), 0),
-    totalMarketProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedMarket) || 0), 0),
+    totalBilling: filteredData.reduce((sum, item) => sum + item.billing, 0),
+    totalProjected: filteredData.reduce((sum, item) => sum + item.projectedBilling, 0),
+    totalMarketActual: filteredData.reduce((sum, item) => sum + item.actualMarket, 0),
+    totalMarketProjected: filteredData.reduce((sum, item) => sum + item.projectedMarket, 0),
     advertisers: filteredData.length
   };
 
   // Calculate category breakdown for pie chart
   const categoryBreakdown = filteredData.reduce((acc, item) => {
     const category = item.category || 'Uncategorized';
-    const billingValue = Number(item.billing) || 0;
-    acc[category] = (acc[category] || 0) + billingValue;
+    acc[category] = (acc[category] || 0) + item.billing;
     return acc;
   }, {} as Record<string, number>);
 
   const pieData = Object.entries(categoryBreakdown).map(([category, value]) => ({
     name: category,
     value,
-    percentage: summaryData.totalBilling > 0 ? ((Number(value) / summaryData.totalBilling) * 100).toFixed(1) : "0.0"
+    percentage: ((value / summaryData.totalBilling) * 100).toFixed(1)
   }));
 
   if (loading) {
@@ -147,7 +151,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">${summaryData.totalBilling.toLocaleString()}</div>
             <div className="text-sm text-blue-600">
-              {summaryData.totalProjected > 0 ? calculateAttainment(summaryData.totalBilling, summaryData.totalProjected) : "0"}% of projection
+              {calculateAttainment(summaryData.totalBilling, summaryData.totalProjected)}% of projection
             </div>
           </CardContent>
         </Card>
@@ -167,7 +171,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">${summaryData.totalMarketActual.toLocaleString()}</div>
             <div className="text-sm text-green-600">
-              {summaryData.totalMarketProjected > 0 ? calculateAttainment(summaryData.totalMarketActual, summaryData.totalMarketProjected) : "0"}% of market projection
+              {calculateAttainment(summaryData.totalMarketActual, summaryData.totalMarketProjected)}% of market projection
             </div>
           </CardContent>
         </Card>
@@ -246,6 +250,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                   <th className="text-left py-3 px-2 font-medium text-gray-600">Station/Market</th>
                   <th className="text-left py-3 px-2 font-medium text-gray-600">Advertiser</th>
                   <th className="text-left py-3 px-2 font-medium text-gray-600">AE Name</th>
+                  <th className="text-left py-3 px-2 font-medium text-gray-600">Category</th>
                   <th 
                     className="text-right py-3 px-2 font-medium text-gray-600 cursor-pointer hover:text-gray-900 flex items-center justify-end space-x-1"
                     onClick={() => handleSort('billing')}
@@ -277,7 +282,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
               </thead>
               <tbody>
                 {filteredData.map((row, index) => {
-                  const attainment = row.projectedBilling > 0 ? parseFloat(calculateAttainment(row.billing || 0, row.projectedBilling || 0)) : 0;
+                  const attainment = parseFloat(calculateAttainment(row.billing, row.projectedBilling));
                   return (
                     <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-2">
@@ -286,22 +291,27 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                       </td>
                       <td className="py-3 px-2 font-medium text-blue-600">{row.advertiser}</td>
                       <td className="py-3 px-2">{row.aeName}</td>
-                      <td className="py-3 px-2 text-right font-bold">${(row.billing || 0).toLocaleString()}</td>
-                      <td className="py-3 px-2 text-right text-blue-600">${(row.projectedBilling || 0).toLocaleString()}</td>
+                      <td className="py-3 px-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {row.category}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-2 text-right font-bold">${row.billing.toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right text-blue-600">${row.projectedBilling.toLocaleString()}</td>
                       <td className={`py-3 px-2 text-right font-medium ${
                         attainment >= 100 ? 'text-green-600' : attainment >= 90 ? 'text-yellow-600' : 'text-red-600'
                       }`}>
-                        {attainment.toFixed(1)}%
+                        {attainment}%
                       </td>
                       <td className={`py-3 px-2 text-right font-medium ${
-                        (row.variance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        row.variance >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {(row.variance || 0) >= 0 ? '+' : ''}${(row.variance || 0).toLocaleString()}
+                        {row.variance >= 0 ? '+' : ''}${row.variance.toLocaleString()}
                       </td>
                       <td className="py-3 px-2 text-right">
-                        <div className="font-medium">${(row.actualMarket || 0).toLocaleString()}</div>
+                        <div className="font-medium">${row.actualMarket.toLocaleString()}</div>
                         <div className="text-xs text-gray-500">
-                          vs ${(row.projectedMarket || 0).toLocaleString()} proj
+                          vs ${row.projectedMarket.toLocaleString()} proj
                         </div>
                       </td>
                     </tr>

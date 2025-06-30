@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Award, TrendingUp, TrendingDown, DollarSign, Target, Calendar } from 'lucide-react';
-import { fetchAdvertisers } from '@/utils/referenceData';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { TrendingUp, Filter, Download, Users, Trophy, Award, Medal } from 'lucide-react';
+import { fetchTopAdvertisersData } from '@/utils/referenceData';
 
 interface TopAdvertisersProps {
   station: string;
@@ -11,189 +12,190 @@ interface TopAdvertisersProps {
     agency: string;
     advertiser: string;
     station: string;
+    category: string;
+    aeName: string;
     quarter: string;
     year: string;
   };
 }
 
 const TopAdvertisers: React.FC<TopAdvertisersProps> = ({ station, filters }) => {
-  const [sortField, setSortField] = useState<'spend' | 'spots' | 'trend'>('spend');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [advertisersData, setAdvertisersData] = useState<any[]>([]);
+  const [advertiserData, setAdvertiserData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<'totalBilling' | 'yoyChange' | 'spotCount'>('totalBilling');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        let data = await fetchAdvertisers();
         
-        // Enhance data with mock metrics
-        const enhancedData = data.map((advertiser, index) => ({
-          ...advertiser,
-          rank: index + 1,
-          spend: Math.floor(Math.random() * 500000) + 50000, // Mock spend $50K-$550K
-          spots: Math.floor(Math.random() * 1000) + 100, // Mock spots 100-1100
-          trend: (Math.random() - 0.5) * 40, // Mock trend -20% to +20%
-          lastOrderDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          region: ['Northeast', 'Southeast', 'Midwest', 'West Coast', 'Southwest'][Math.floor(Math.random() * 5)],
-          makegoods: Math.floor(Math.random() * 5), // 0-5 makegoods
-          missed: Math.floor(Math.random() * 3) // 0-3 missed
-        }));
-
-        // Apply filters
-        let filteredData = enhancedData;
-        if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-          filteredData = filteredData.filter(item => 
-            item.Name && item.Name.toLowerCase().includes(filters.advertiser.toLowerCase())
-          );
-        }
+        let data = await fetchTopAdvertisersData(filters);
+        
+        // Apply additional filters
         if (filters.agency && !filters.agency.startsWith('All')) {
-          // Mock agency filtering since we don't have agency data in advertisers table
-          filteredData = filteredData.filter(() => Math.random() > 0.3);
+          data = data.filter(item => item.agency === filters.agency);
+        }
+        if (filters.advertiser && !filters.advertiser.startsWith('All')) {
+          data = data.filter(item => item.advertiser === filters.advertiser);
+        }
+        if (filters.category && !filters.category.startsWith('All')) {
+          data = data.filter(item => item.category === filters.category);
+        }
+        if (selectedCategory !== 'All') {
+          data = data.filter(item => item.category === selectedCategory);
         }
 
         // Sort data
-        filteredData.sort((a, b) => b.spend - a.spend);
-        
-        setAdvertisersData(filteredData.slice(0, 100)); // Top 100
+        data.sort((a, b) => {
+          switch (sortBy) {
+            case 'totalBilling':
+              return b.totalBilling - a.totalBilling;
+            case 'yoyChange':
+              return parseFloat(b.yoyChange) - parseFloat(a.yoyChange);
+            case 'spotCount':
+              return b.spotCount - a.spotCount;
+            default:
+              return b.totalBilling - a.totalBilling;
+          }
+        });
+
+        // Update ranks after filtering and sorting
+        data = data.map((item, index) => ({ ...item, rank: index + 1 }));
+
+        setAdvertiserData(data.slice(0, 100)); // Top 100
       } catch (error) {
-        console.error('Error fetching advertisers data:', error);
+        console.error('Error fetching advertiser data:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [station, filters]);
+  }, [station, filters, sortBy, selectedCategory]);
 
-  const handleSort = (field: 'spend' | 'spots' | 'trend') => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-
-    const sortedData = [...advertisersData].sort((a, b) => {
-      const aVal = a[field];
-      const bVal = b[field];
-      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-    setAdvertisersData(sortedData);
+  const exportData = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Rank,Advertiser,Category,Agency,Total Billing,Spot Count,YoY Change,Last Order Date,Makegoods,Region\n"
+      + advertiserData.map(row => 
+          `${row.rank},${row.advertiser},${row.category},${row.agency},${row.totalBilling},${row.spotCount},${row.yoyChange},${row.lastOrderDate},${row.makegoods},${row.region}`
+        ).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "top_100_advertisers.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const getRankBadge = (rank: number) => {
-    if (rank <= 3) {
-      const colors = ['bg-yellow-500', 'bg-gray-400', 'bg-amber-600'];
-      const icons = ['🥇', '🥈', '🥉'];
-      return (
-        <div className={`${colors[rank - 1]} text-white px-2 py-1 rounded-full text-xs font-bold flex items-center space-x-1`}>
-          <span>{icons[rank - 1]}</span>
-          <span>#{rank}</span>
-        </div>
-      );
-    } else if (rank <= 10) {
-      return (
-        <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-bold">
-          #{rank}
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="outline" className="font-medium">
-          #{rank}
-        </Badge>
-      );
-    }
-  };
+  const categories = ['All', 'Automotive', 'QSR', 'Healthcare', 'Financial', 'Retail', 'Technology', 'Real Estate', 'Uncategorized'];
 
-  const getTrendIcon = (trend: number) => {
-    if (trend > 0) {
-      return <TrendingUp className="w-4 h-4 text-green-500" />;
-    } else if (trend < 0) {
-      return <TrendingDown className="w-4 h-4 text-red-500" />;
-    } else {
-      return <Target className="w-4 h-4 text-gray-500" />;
-    }
+  const getRankIcon = (rank: number) => {
+    if (rank === 1) return <Trophy className="w-4 h-4 text-yellow-500" />;
+    if (rank === 2) return <Award className="w-4 h-4 text-gray-400" />;
+    if (rank === 3) return <Medal className="w-4 h-4 text-amber-600" />;
+    if (rank <= 10) return <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{rank}</div>;
+    return null;
   };
 
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading advertisers data...</div>
+        <div className="text-lg text-gray-600">Loading advertiser data...</div>
       </div>
     );
   }
 
   return (
     <div className="h-full overflow-auto space-y-6">
-      {/* Header */}
+      {/* Header with Controls */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-            <Award className="w-6 h-6 text-yellow-500" />
-            <span>Top 100 Advertisers</span>
-          </h2>
-          <p className="text-sm text-gray-600">Ranked by total billing with performance metrics</p>
+          <h2 className="text-xl font-bold text-gray-900">Top 100 Advertisers</h2>
+          <p className="text-sm text-gray-600">Advertiser performance ranked by total billing and growth metrics</p>
         </div>
-        <Badge variant="outline" className="text-sm">
-          {advertisersData.length} Advertisers
-        </Badge>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <select 
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Sort by:</span>
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'totalBilling' | 'yoyChange' | 'spotCount')}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="totalBilling">Total Billing</option>
+              <option value="yoyChange">YoY Growth</option>
+              <option value="spotCount">Spot Count</option>
+            </select>
+          </div>
+          <button
+            onClick={exportData}
+            className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export</span>
+          </button>
+          <Badge variant="outline" className="text-sm">
+            {advertiserData.length} Advertisers
+          </Badge>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center space-x-2">
-              <DollarSign className="w-4 h-4 text-green-500" />
-              <span>Total Spend</span>
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Billing</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              ${advertisersData.reduce((sum, item) => sum + item.spend, 0).toLocaleString()}
+              ${advertiserData.reduce((sum, item) => sum + item.totalBilling, 0).toLocaleString()}
             </div>
-            <div className="text-sm text-gray-500">Across all advertisers</div>
+            <div className="text-sm text-green-600">Combined revenue</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Top Performer</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-bold text-gray-900">
-              {advertisersData[0]?.Name || 'N/A'}
-            </div>
-            <div className="text-sm text-green-600">
-              ${advertisersData[0]?.spend.toLocaleString() || '0'}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Avg Growth</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {advertisersData.length > 0 
-                ? `+${(advertisersData.reduce((sum, item) => sum + Math.max(0, item.trend), 0) / advertisersData.length).toFixed(1)}%`
-                : '0%'
-              }
-            </div>
-            <div className="text-sm text-gray-500">YoY average</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Active Regions</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Spots</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {new Set(advertisersData.map(item => item.region)).size}
+              {advertiserData.reduce((sum, item) => sum + item.spotCount, 0).toLocaleString()}
             </div>
-            <div className="text-sm text-gray-500">Geographic markets</div>
+            <div className="text-sm text-blue-600">Air time inventory</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Avg YoY Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">
+              {(advertiserData.reduce((sum, item) => sum + parseFloat(item.yoyChange), 0) / advertiserData.length).toFixed(1)}%
+            </div>
+            <div className="text-sm text-green-600">Year over year</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Active Advertisers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">{advertiserData.length}</div>
+            <div className="text-sm text-gray-600">In current selection</div>
           </CardContent>
         </Card>
       </div>
@@ -201,90 +203,59 @@ const TopAdvertisers: React.FC<TopAdvertisersProps> = ({ station, filters }) => 
       {/* Advertisers Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Top 100 Advertisers Ranking</CardTitle>
-          <CardDescription>Complete advertiser performance breakdown with billing and activity metrics</CardDescription>
+          <CardTitle>Top 100 Advertiser Rankings</CardTitle>
+          <CardDescription>Complete advertiser performance with billing, trends, and operational metrics</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-2 font-medium text-gray-600">Rank</th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-600">Advertiser Name</th>
+                  <th className="text-left py-3 px-2 font-medium text-gray-600">Advertiser</th>
+                  <th className="text-left py-3 px-2 font-medium text-gray-600">Category</th>
+                  <th className="text-left py-3 px-2 font-medium text-gray-600">Agency</th>
                   <th className="text-left py-3 px-2 font-medium text-gray-600">Region</th>
-                  <th 
-                    className="text-right py-3 px-2 font-medium text-gray-600 cursor-pointer hover:text-gray-900"
-                    onClick={() => handleSort('spend')}
-                  >
-                    Spend ($)
-                  </th>
-                  <th 
-                    className="text-right py-3 px-2 font-medium text-gray-600 cursor-pointer hover:text-gray-900"
-                    onClick={() => handleSort('spots')}
-                  >
-                    Spots
-                  </th>
-                  <th 
-                    className="text-right py-3 px-2 font-medium text-gray-600 cursor-pointer hover:text-gray-900"
-                    onClick={() => handleSort('trend')}
-                  >
-                    YoY Trend
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-600">Last Order</th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-600">Issues</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Total Billing</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">Spot Count</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-600">YoY Change</th>
+                  <th className="text-center py-3 px-2 font-medium text-gray-600">Last Order</th>
+                  <th className="text-center py-3 px-2 font-medium text-gray-600">Makegoods</th>
                 </tr>
               </thead>
               <tbody>
-                {advertisersData.map((advertiser, index) => (
-                  <tr key={advertiser.Code} className="border-b border-gray-100 hover:bg-gray-50">
+                {advertiserData.map((row, index) => (
+                  <tr key={index} className={`border-b border-gray-100 hover:bg-gray-50 ${
+                    row.rank <= 10 ? 'bg-blue-50' : ''
+                  }`}>
                     <td className="py-3 px-2">
-                      {getRankBadge(advertiser.rank)}
-                    </td>
-                    <td className="py-3 px-2">
-                      <div className="font-medium text-blue-600">{advertiser.Name}</div>
-                      <div className="text-xs text-gray-500">Code: {advertiser.Code}</div>
-                    </td>
-                    <td className="py-3 px-2">
-                      <Badge variant="outline" className="text-xs">
-                        {advertiser.region}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-2 text-right font-bold">
-                      ${advertiser.spend.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-2 text-right font-medium">
-                      {advertiser.spots.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-2 text-right">
-                      <div className="flex items-center justify-end space-x-1">
-                        {getTrendIcon(advertiser.trend)}
-                        <span className={`font-medium ${
-                          advertiser.trend > 0 ? 'text-green-600' : 
-                          advertiser.trend < 0 ? 'text-red-600' : 'text-gray-600'
-                        }`}>
-                          {advertiser.trend > 0 ? '+' : ''}{advertiser.trend.toFixed(1)}%
+                      <div className="flex items-center space-x-2">
+                        {getRankIcon(row.rank)}
+                        <span className={`font-medium ${row.rank <= 10 ? 'text-blue-600' : 'text-gray-500'}`}>
+                          #{row.rank}
                         </span>
                       </div>
                     </td>
+                    <td className="py-3 px-2 font-medium text-blue-600">{row.advertiser}</td>
                     <td className="py-3 px-2">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-3 h-3 text-gray-400" />
-                        <span className="text-xs">{advertiser.lastOrderDate}</span>
-                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {row.category}
+                      </Badge>
                     </td>
-                    <td className="py-3 px-2">
-                      <div className="flex space-x-1">
-                        {advertiser.makegoods > 0 && (
-                          <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">
-                            {advertiser.makegoods} MG
-                          </Badge>
-                        )}
-                        {advertiser.missed > 0 && (
-                          <Badge variant="destructive" className="text-xs">
-                            {advertiser.missed} Miss
-                          </Badge>
-                        )}
-                      </div>
+                    <td className="py-3 px-2 text-gray-600">{row.agency}</td>
+                    <td className="py-3 px-2 text-gray-600">{row.region}</td>
+                    <td className="py-3 px-2 text-right font-bold">${row.totalBilling.toLocaleString()}</td>
+                    <td className="py-3 px-2 text-right text-blue-600">{row.spotCount.toLocaleString()}</td>
+                    <td className={`py-3 px-2 text-right font-medium ${
+                      parseFloat(row.yoyChange) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {row.yoyChange}%
+                    </td>
+                    <td className="py-3 px-2 text-center text-gray-600">{row.lastOrderDate}</td>
+                    <td className="py-3 px-2 text-center">
+                      <Badge variant={row.makegoods > 3 ? "destructive" : "secondary"} className="text-xs">
+                        {row.makegoods}
+                      </Badge>
                     </td>
                   </tr>
                 ))}

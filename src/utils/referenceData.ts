@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ReferenceData {
@@ -5,6 +6,7 @@ export interface ReferenceData {
   advertisers: string[];
   stations: string[];
   markets: string[];
+  categories: string[];
   aeNames: string[];
 }
 
@@ -14,6 +16,7 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
     advertisers: ['All Advertisers'],
     stations: ['All Stations'],
     markets: ['All Markets'],
+    categories: ['All Categories'],
     aeNames: ['All AE Names']
   };
 
@@ -74,6 +77,20 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
       defaultData.markets = ['All Markets', ...uniqueMarkets];
     }
 
+    // Fetch categories
+    const { data: categoriesData, error: categoriesError } = await supabase
+      .from('references_advertisers')
+      .select('"Category Name"')
+      .not('Category Name', 'is', null);
+
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError);
+    } else {
+      console.log('Fetched categories:', categoriesData?.length || 0);
+      const uniqueCategories = [...new Set(categoriesData?.map(item => item['Category Name']).filter(Boolean) || [])];
+      defaultData.categories = ['All Categories', ...uniqueCategories];
+    }
+
     // Fetch AE Names from headline data
     const { data: aeData, error: aeError } = await supabase
       .from('1test_llama_gemini')
@@ -93,26 +110,6 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
   }
 
   return defaultData;
-}
-
-// Export fetchAdvertisers function for TopAdvertisers component
-export async function fetchAdvertisers() {
-  try {
-    const { data: advertisersData, error: advertisersError } = await supabase
-      .from('references_advertisers')
-      .select('Name, Code, "Category Name"')
-      .not('Name', 'is', null);
-
-    if (advertisersError) {
-      console.error('Error fetching advertisers:', advertisersError);
-      return [];
-    }
-
-    return advertisersData || [];
-  } catch (error) {
-    console.error('Error in fetchAdvertisers:', error);
-    return [];
-  }
 }
 
 export async function fetchHeadlineData(filters: any = {}) {

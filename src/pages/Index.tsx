@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DailyStationStatus from '@/components/dashboard/DailyStationStatus';
-import PartnerMovement from '@/components/dashboard/PartnerMovement';
+import DailyDeclinersAdders from '@/components/dashboard/DailyDeclinersAdders';
 import TopAdvertisers from '@/components/dashboard/TopAdvertisers';
 import QuarterlyPerformance from '@/components/dashboard/QuarterlyPerformance';
 import MonthlyProjections from '@/components/dashboard/MonthlyProjections';
@@ -17,6 +17,7 @@ const Index = () => {
     advertiser: 'All Advertisers',
     station: 'All Stations',
     market: 'All Markets',
+    category: 'All Categories',
     aeName: 'All AE Names',
     quarter: 'All Quarters',
     year: 'All Years'
@@ -40,6 +41,7 @@ const Index = () => {
       advertiser: 'All Advertisers',
       station: 'All Stations',
       market: 'All Markets',
+      category: 'All Categories',
       aeName: 'All AE Names',
       quarter: 'All Quarters',
       year: 'All Years'
@@ -59,7 +61,7 @@ const Index = () => {
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <div className="text-sm font-medium text-gray-900">Q2 2025</div>
+              <div className="text-sm font-medium text-gray-900">Q4 2024</div>
               <div className="text-xs text-gray-500">Last updated: 2 min ago</div>
             </div>
           </div>
@@ -84,8 +86,8 @@ const Index = () => {
               <TabsTrigger value="top-advertisers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                 Top 100 Advertisers
               </TabsTrigger>
-              <TabsTrigger value="partner-movement" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                Partner Movement
+              <TabsTrigger value="decliners-adders" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Decliners/Adders
               </TabsTrigger>
               <TabsTrigger value="quarterly-performance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                 Quarterly Performance
@@ -106,8 +108,8 @@ const Index = () => {
               <TopAdvertisers station={selectedStation} filters={globalFilters} />
             </TabsContent>
             
-            <TabsContent value="partner-movement" className="h-[calc(100%-60px)]">
-              <PartnerMovement station={selectedStation} filters={globalFilters} />
+            <TabsContent value="decliners-adders" className="h-[calc(100%-60px)]">
+              <DailyDeclinersAdders station={selectedStation} filters={globalFilters} />
             </TabsContent>
             
             <TabsContent value="quarterly-performance" className="h-[calc(100%-60px)]">
