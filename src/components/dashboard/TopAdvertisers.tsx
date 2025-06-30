@@ -42,19 +42,9 @@ const TopAdvertisers: React.FC<TopAdvertisersProps> = ({ station, filters }) => 
             item.advertiser && item.advertiser.toLowerCase().includes(filters.advertiser.toLowerCase())
           );
         }
-        if (filters.station && !filters.station.startsWith('All')) {
-          data = data.filter(item => 
-            item.station && item.station.toLowerCase().includes(filters.station.toLowerCase())
-          );
-        }
         if (filters.category && !filters.category.startsWith('All')) {
           data = data.filter(item => 
             item.category && item.category.toLowerCase().includes(filters.category.toLowerCase())
-          );
-        }
-        if (filters.aeName && !filters.aeName.startsWith('All')) {
-          data = data.filter(item => 
-            item.aeName && item.aeName.toLowerCase().includes(filters.aeName.toLowerCase())
           );
         }
         if (selectedCategory !== 'All') {
