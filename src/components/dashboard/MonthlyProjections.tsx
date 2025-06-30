@@ -46,7 +46,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   const calculateCategoryBreakdown = (data: any[]) => {
     const categoryTotals = data.reduce((acc: any, item: any) => {
       const category = item.category || 'Other';
-      const billing = parseFloat(item.billing?.toString().replace(/[,$]/g, '')) || 0;
+      const billing = parseFloat(String(item.billing || 0).replace(/[,$]/g, '')) || 0;
       
       if (!acc[category]) {
         acc[category] = 0;
@@ -55,13 +55,13 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       return acc;
     }, {});
 
-    const total = Object.values(categoryTotals).reduce((sum: number, value: any) => sum + value, 0);
+    const total = Object.values(categoryTotals).reduce((sum: number, value: any) => sum + Number(value || 0), 0);
     
     return Object.entries(categoryTotals)
       .map(([category, value]: [string, any]) => ({
         name: category,
-        value: value,
-        percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0'
+        value: Number(value || 0),
+        percentage: total > 0 ? ((Number(value || 0) / total) * 100).toFixed(1) : '0'
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 6); // Top 6 categories
@@ -81,12 +81,12 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         // Transform and calculate metrics from real data
         const transformedData = data.map((item: any) => {
           // Parse billing values, handling different formats
-          const billing = parseFloat(item['Q3-2025 Billing$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedBilling = parseFloat(item['Proj Billing$']?.toString().replace(/[,$]/g, '')) || 0;
-          const actualMarket = parseFloat(item['Q3-2025 Market$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedMarket = parseFloat(item['Proj Market$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedDiff = parseFloat(item['Proj Diff$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedShare = parseFloat(item['Proj Share%']?.toString().replace(/%/g, '')) || 0;
+          const billing = parseFloat(String(item['Q3-2025 Billing$']?.toString().replace(/[,$]/g, '')) || 0);
+          const projectedBilling = parseFloat(String(item['Proj Billing$']?.toString().replace(/[,$]/g, '')) || 0);
+          const actualMarket = parseFloat(String(item['Q3-2025 Market$']?.toString().replace(/[,$]/g, '')) || 0);
+          const projectedMarket = parseFloat(String(item['Proj Market$']?.toString().replace(/[,$]/g, '')) || 0);
+          const projectedDiff = parseFloat(String(item['Proj Diff$']?.toString().replace(/[,$]/g, '')) || 0);
+          const projectedShare = parseFloat(String(item['Proj Share%']?.toString().replace(/%/g, '')) || 0);
 
           return {
             station: item['Station Code'] || 'Unknown',

@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, TrendingUp, DollarSign, Target, Download } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   fetchDarwinProjections, 
   calculateMonthlyPerformanceData, 
@@ -365,29 +365,11 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
 
   return (
     <div className="h-full overflow-auto space-y-6">
-      {/* Header with Controls */}
+      {/* Header with Export */}
       <div className="flex items-center justify-between">
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setViewMode('charts')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'charts' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Data Visualizations
-          </button>
-          <button
-            onClick={() => setViewMode('performance')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'performance' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Performance Details
-          </button>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Daily Station Status</h2>
+          <p className="text-sm text-gray-600">Real-time performance metrics and projections</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -438,14 +420,20 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
         ))}
       </div>
 
-      {/* Main Content */}
-      {viewMode === 'charts' ? (
-        <div className="space-y-6">
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="daily" className="h-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6 bg-white border border-gray-200">
+          <TabsTrigger value="daily" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            Daily
+          </TabsTrigger>
+          <TabsTrigger value="monthly" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            Monthly
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="daily" className="space-y-6">
           {/* Competitive Analysis Chart */}
           <CompetitiveAnalysisChart data={competitiveData} />
-
-          {/* Darwin Projections Chart */}
-          <DarwinProjectionsChart data={darwinData} />
 
           {/* Pacing Trend Chart */}
           <PacingTrendChart data={stationData} />
@@ -472,10 +460,13 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
               </CardContent>
             </Card>
           )}
-        </div>
-      ) : (
-        <PacingTrendChart data={stationData} />
-      )}
+        </TabsContent>
+        
+        <TabsContent value="monthly" className="space-y-6">
+          {/* Darwin Projections Chart */}
+          <DarwinProjectionsChart data={darwinData} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
