@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ReferenceData {
@@ -161,19 +160,12 @@ export async function fetchCompetitiveAnalysisData(filters: any = {}) {
   try {
     console.log('Fetching competitive analysis data with filters:', filters);
     
-    let query = supabase
-      .from('_temp."Competitive Analysis_250624-1224_AgyAdv"')
-      .select('*');
-
-    // Apply filters if they exist and are not "All"
-    if (filters.agency && !filters.agency.startsWith('All')) {
-      query = query.eq('Agency', filters.agency);
-    }
-    if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-      query = query.eq('Advertiser', filters.advertiser);
-    }
-
-    const { data, error } = await query;
+    // Use the schema-qualified table name directly
+    const { data, error } = await supabase
+      .rpc('fetch_competitive_analysis', {
+        agency_filter: filters.agency && !filters.agency.startsWith('All') ? filters.agency : null,
+        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
+      });
 
     if (error) {
       console.error('Error fetching competitive analysis data:', error);
@@ -193,16 +185,11 @@ export async function fetchPacingData(filters: any = {}) {
   try {
     console.log('Fetching pacing data with filters:', filters);
     
-    let query = supabase
-      .from('_temp."Pacing_250624-1221_Adv"')
-      .select('*');
-
-    // Apply filters if they exist and are not "All"
-    if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-      query = query.eq('Advertiser', filters.advertiser);
-    }
-
-    const { data, error } = await query;
+    // Use the schema-qualified table name directly
+    const { data, error } = await supabase
+      .rpc('fetch_pacing_data', {
+        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
+      });
 
     if (error) {
       console.error('Error fetching pacing data:', error);
@@ -217,28 +204,18 @@ export async function fetchPacingData(filters: any = {}) {
   }
 }
 
-// Updated function to fetch Darwin sales projections from the correct _temp schema
+// Updated function to fetch Darwin sales projections using RPC
 export async function fetchDarwinProjections(filters: any = {}) {
   try {
     console.log('Fetching Darwin projections with filters:', filters);
     
-    // Fetch from the _temp schema table directly (not public._temp)
-    let query = supabase
-      .from('_temp."darwin-sales-projections-20250624_Cris View"')
-      .select('*');
-
-    // Apply filters if they exist and are not "All"
-    if (filters.station && !filters.station.startsWith('All')) {
-      query = query.eq('Station Code', filters.station);
-    }
-    if (filters.agency && !filters.agency.startsWith('All')) {
-      query = query.eq('Agency Name', filters.agency);
-    }
-    if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-      query = query.eq('Advertiser Name', filters.advertiser);
-    }
-
-    const { data: darwinData, error: darwinError } = await query.limit(100);
+    // Use RPC function to fetch from the _temp schema
+    const { data: darwinData, error: darwinError } = await supabase
+      .rpc('fetch_darwin_projections', {
+        station_filter: filters.station && !filters.station.startsWith('All') ? filters.station : null,
+        agency_filter: filters.agency && !filters.agency.startsWith('All') ? filters.agency : null,
+        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
+      });
 
     if (darwinError) {
       console.error('Error fetching Darwin projections:', darwinError);
