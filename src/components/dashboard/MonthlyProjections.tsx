@@ -31,42 +31,138 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   const [filterMarket, setFilterMarket] = useState<string>('All');
   const [projectionsData, setProjectionsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [realMetrics, setRealMetrics] = useState({
+    totalBilling: 0,
+    totalProjected: 0,
+    totalMarketActual: 0,
+    totalMarketProjected: 0,
+    avgAttainment: 0,
+    advertisers: 0
+  });
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
 
-  // Mock data for pie chart - replace with real category data from Supabase
-  const mockPieData = [
-    { name: 'Automotive', value: 125000, percentage: '28.5' },
-    { name: 'Healthcare', value: 98000, percentage: '22.3' },
-    { name: 'Retail', value: 87000, percentage: '19.8' },
-    { name: 'Real Estate', value: 65000, percentage: '14.8' },
-    { name: 'Financial', value: 42000, percentage: '9.6' },
-    { name: 'Entertainment', value: 22000, percentage: '5.0' }
-  ];
+  // Calculate category breakdown from real data
+  const calculateCategoryBreakdown = (data: any[]) => {
+    const categoryTotals = data.reduce((acc: any, item: any) => {
+      const category = item.category || 'Other';
+      const billing = parseFloat(item.billing?.toString().replace(/[,$]/g, '')) || 0;
+      
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      acc[category] += billing;
+      return acc;
+    }, {});
+
+    const total = Object.values(categoryTotals).reduce((sum: number, value: any) => sum + value, 0);
+    
+    return Object.entries(categoryTotals)
+      .map(([category, value]: [string, any]) => ({
+        name: category,
+        value: value,
+        percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0'
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6); // Top 6 categories
+  };
+
+  const [pieData, setPieData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        let data = await fetchDarwinProjections(filters);
+        console.log('Fetching Darwin projections with filters:', filters);
         
-        // Apply filters
+        let data = await fetchDarwinProjections(filters);
+        console.log('Raw Darwin data received:', data.length, 'records');
+        
+        // Transform and calculate metrics from real data
+        const transformedData = data.map((item: any) => {
+          // Parse billing values, handling different formats
+          const billing = parseFloat(item['Q3-2025 Billing$']?.toString().replace(/[,$]/g, '')) || 0;
+          const projectedBilling = parseFloat(item['Proj Billing$']?.toString().replace(/[,$]/g, '')) || 0;
+          const actualMarket = parseFloat(item['Q3-2025 Market$']?.toString().replace(/[,$]/g, '')) || 0;
+          const projectedMarket = parseFloat(item['Proj Market$']?.toString().replace(/[,$]/g, '')) || 0;
+          const projectedDiff = parseFloat(item['Proj Diff$']?.toString().replace(/[,$]/g, '')) || 0;
+          const projectedShare = parseFloat(item['Proj Share%']?.toString().replace(/%/g, '')) || 0;
+
+          return {
+            station: item['Station Code'] || 'Unknown',
+            market: item['Market'] || 'Unknown',
+            advertiser: item['Advertiser Name'] || 'Unknown',
+            aeName: item['Seller Code'] || 'Unknown',
+            agency: item['Agency Name'] || 'Direct',
+            billing: billing,
+            projectedBilling: projectedBilling,
+            actualMarket: actualMarket,
+            projectedMarket: projectedMarket,
+            variance: projectedDiff,
+            category: item['Category'] || 'Other',
+            quarter: item['Quarter'] || 'Q3-2025',
+            projectedShare: projectedShare
+          };
+        });
+
+        console.log('Transformed data:', transformedData.length, 'records');
+
+        // Apply additional filters
+        let filteredData = transformedData;
+        
         if (filters.agency && !filters.agency.startsWith('All')) {
-          data = data.filter(item => item.agency === filters.agency);
+          filteredData = filteredData.filter(item => item.agency === filters.agency);
         }
         if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-          data = data.filter(item => item.advertiser === filters.advertiser);
+          filteredData = filteredData.filter(item => item.advertiser === filters.advertiser);
         }
         if (filters.station && !filters.station.startsWith('All')) {
-          data = data.filter(item => item.station === filters.station);
+          filteredData = filteredData.filter(item => item.station === filters.station);
         }
         if (filters.aeName && !filters.aeName.startsWith('All')) {
-          data = data.filter(item => item.aeName === filters.aeName);
+          filteredData = filteredData.filter(item => item.aeName === filters.aeName);
         }
+
+        setProjectionsData(filteredData);
+
+        // Calculate real metrics
+        const totalBilling = filteredData.reduce((sum, item) => sum + item.billing, 0);
+        const totalProjected = filteredData.reduce((sum, item) => sum + item.projectedBilling, 0);
+        const totalMarketActual = filteredData.reduce((sum, item) => sum + item.actualMarket, 0);
+        const totalMarketProjected = filteredData.reduce((sum, item) => sum + item.projectedMarket, 0);
+        const avgAttainment = totalProjected > 0 ? (totalBilling / totalProjected) * 100 : 0;
+
+        setRealMetrics({
+          totalBilling,
+          totalProjected,
+          totalMarketActual,
+          totalMarketProjected,
+          avgAttainment,
+          advertisers: filteredData.length
+        });
+
+        // Calculate category breakdown from real data
+        const categoryBreakdown = calculateCategoryBreakdown(filteredData);
+        setPieData(categoryBreakdown);
+
+        console.log('Calculated metrics:', {
+          totalBilling,
+          totalProjected,
+          avgAttainment,
+          advertisers: filteredData.length
+        });
         
-        setProjectionsData(data);
       } catch (error) {
         console.error('Error fetching projections data:', error);
+        // Keep existing mock data structure for fallback
+        setRealMetrics({
+          totalBilling: 0,
+          totalProjected: 0,
+          totalMarketActual: 0,
+          totalMarketProjected: 0,
+          avgAttainment: 0,
+          advertisers: 0
+        });
       } finally {
         setLoading(false);
       }
@@ -96,21 +192,22 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   };
 
   const calculateAttainment = (actual: number, projected: number) => {
-    return ((actual / projected) * 100).toFixed(1);
+    return projected > 0 ? ((actual / projected) * 100).toFixed(1) : '0.0';
   };
 
+  // Use real calculated metrics
   const summaryData = {
-    totalBilling: filteredData.reduce((sum, item) => sum + (Number(item.billing) || 0), 0),
-    totalProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedBilling) || 0), 0),
-    totalMarketActual: filteredData.reduce((sum, item) => sum + (Number(item.actualMarket) || 0), 0),
-    totalMarketProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedMarket) || 0), 0),
-    advertisers: filteredData.length
+    totalBilling: realMetrics.totalBilling,
+    totalProjected: realMetrics.totalProjected,
+    totalMarketActual: realMetrics.totalMarketActual,
+    totalMarketProjected: realMetrics.totalMarketProjected,
+    advertisers: realMetrics.advertisers
   };
 
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading projections data...</div>
+        <div className="text-lg text-gray-600">Loading real projections data from Darwin system...</div>
       </div>
     );
   }
@@ -121,7 +218,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Monthly Projections (Darwin System)</h2>
-          <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE</p>
+          <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE - Live Data</p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
@@ -137,8 +234,8 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
               </SelectContent>
             </Select>
           </div>
-          <Badge variant="outline" className="text-sm">
-            {filteredData.length} Advertisers
+          <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-200">
+            {filteredData.length} Live Records
           </Badge>
         </div>
       </div>
@@ -147,7 +244,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       <div className="grid grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Billing</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Billing (Live)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">${summaryData.totalBilling.toLocaleString()}</div>
@@ -191,62 +288,70 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           </CardHeader>
           <CardContent>
             <div className="h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={mockPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={20}
-                    outerRadius={50}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {mockPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Billing']} />
-                </PieChart>
-              </ResponsiveContainer>
+              {pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={20}
+                      outerRadius={50}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Billing']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                  No category data
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Category Legend */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Category Distribution</CardTitle>
-          <CardDescription>
-            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-              Mock Data - Sample category breakdown
-            </Badge>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-4">
-            {mockPieData.map((entry, index) => (
-              <div key={entry.name} className="flex items-center space-x-2">
-                <div 
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                />
-                <div className="flex-1">
-                  <div className="text-sm font-medium">{entry.name}</div>
-                  <div className="text-xs text-gray-500">{entry.percentage}% • ${Number(entry.value).toLocaleString()}</div>
+      {pieData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Category Distribution (Live Data)</CardTitle>
+            <CardDescription>
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                Real Data - Live category breakdown from Darwin system
+              </Badge>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              {pieData.map((entry, index) => (
+                <div key={entry.name} className="flex items-center space-x-2">
+                  <div 
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{entry.name}</div>
+                    <div className="text-xs text-gray-500">{entry.percentage}% • ${Number(entry.value).toLocaleString()}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Projections Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Projections by Advertiser & AE</CardTitle>
-          <CardDescription>Billing performance vs projections with market context</CardDescription>
+          <CardTitle>Monthly Projections by Advertiser & AE (Live Data)</CardTitle>
+          <CardDescription>Real billing performance vs projections with market context from Darwin system</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -331,6 +436,12 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                 })}
               </tbody>
             </table>
+            
+            {filteredData.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No projection data available for the selected filters
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
