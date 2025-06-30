@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ReferenceData {
@@ -249,6 +250,7 @@ export async function fetchDarwinProjections(filters: any = {}) {
       // Transform the data to match the expected format for the components
       return darwinData.map((row: any) => ({
         stationCode: row['Station Code'] || 'Unknown',
+        station: row['Station Code'] || 'Unknown', // Add station property that matches stationCode
         market: row['Market'] || 'Unknown',
         advertiser: row['Advertiser Name'] || 'Unknown',
         aeName: row['Seller Code'] || 'Unknown',
