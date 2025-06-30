@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,12 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('All');
 
+  // Clean station name by removing -TV suffix
+  const cleanStationName = (stationName: string) => {
+    if (!stationName) return stationName;
+    return stationName.replace(/-TV$/i, '').trim();
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,55 +37,81 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
         console.log('Raw data from fetchHeadlineData:', data.length, 'records');
         console.log('Sample market values:', data.slice(0, 5).map(item => item.market));
         
+        // Clean station names by removing -TV suffix
+        data = data.map(item => ({
+          ...item,
+          station_name: cleanStationName(item.station_name)
+        }));
+        
         // Apply case-insensitive filters with better matching logic
         if (filters.agency && !filters.agency.startsWith('All')) {
-          const agencyFilter = filters.agency.toLowerCase();
-          data = data.filter(item => 
-            item.access_name && item.access_name.toLowerCase().includes(agencyFilter)
-          );
+          const agencyFilter = filters.agency.toLowerCase().trim();
+          data = data.filter(item => {
+            if (!item.access_name) return false;
+            const itemAgency = item.access_name.toLowerCase().trim();
+            return itemAgency === agencyFilter || itemAgency.includes(agencyFilter);
+          });
           console.log('After agency filter:', data.length, 'records');
         }
         
         if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-          const advertiserFilter = filters.advertiser.toLowerCase();
-          data = data.filter(item => 
-            item.client_name && item.client_name.toLowerCase().includes(advertiserFilter)
-          );
+          const advertiserFilter = filters.advertiser.toLowerCase().trim();
+          data = data.filter(item => {
+            if (!item.client_name) return false;
+            const itemAdvertiser = item.client_name.toLowerCase().trim();
+            return itemAdvertiser === advertiserFilter || itemAdvertiser.includes(advertiserFilter);
+          });
           console.log('After advertiser filter:', data.length, 'records');
         }
         
         if (filters.station && !filters.station.startsWith('All')) {
-          const stationFilter = filters.station.toLowerCase();
-          data = data.filter(item => 
-            (item.station_name && item.station_name.toLowerCase().includes(stationFilter)) ||
-            (item.station_code && item.station_code.toLowerCase().includes(stationFilter))
-          );
+          const stationFilter = filters.station.toLowerCase().trim();
+          data = data.filter(item => {
+            const stationName = item.station_name ? item.station_name.toLowerCase().trim() : '';
+            const stationCode = item.station_code ? item.station_code.toLowerCase().trim() : '';
+            
+            return stationName === stationFilter || 
+                   stationCode === stationFilter ||
+                   stationName.includes(stationFilter) ||
+                   stationCode.includes(stationFilter);
+          });
           console.log('After station filter:', data.length, 'records');
         }
         
         if (filters.market && !filters.market.startsWith('All')) {
           const marketFilter = filters.market.toLowerCase().trim();
+          console.log('Market filter input:', `"${marketFilter}"`);
+          
           data = data.filter(item => {
             if (!item.market) return false;
             const itemMarket = item.market.toLowerCase().trim();
             
-            console.log('Comparing:', `"${marketFilter}"`, 'with', `"${itemMarket}"`);
+            console.log('Comparing market filter:', `"${marketFilter}"`, 'with item market:', `"${itemMarket}"`);
             
-            // Direct match (most common case)
-            if (itemMarket === marketFilter) return true;
+            // Exact match first
+            if (itemMarket === marketFilter) {
+              console.log('✓ Exact match found');
+              return true;
+            }
             
-            // Handle variations in spacing and punctuation
-            const normalizeMarket = (market: string) => {
-              return market.replace(/[-\s]+/g, '').toLowerCase();
-            };
+            // Normalize both strings by removing spaces, hyphens, and special characters
+            const normalize = (str: string) => str.replace(/[-\s()]/g, '').toLowerCase();
+            const normalizedFilter = normalize(marketFilter);
+            const normalizedItem = normalize(itemMarket);
             
-            const normalizedFilter = normalizeMarket(marketFilter);
-            const normalizedItem = normalizeMarket(itemMarket);
+            console.log('Normalized comparison:', `"${normalizedFilter}"`, 'vs', `"${normalizedItem}"`);
             
-            if (normalizedFilter === normalizedItem) return true;
+            if (normalizedFilter === normalizedItem) {
+              console.log('✓ Normalized match found');
+              return true;
+            }
             
-            // Handle partial matches for compound market names
-            return itemMarket.includes(marketFilter) || marketFilter.includes(itemMarket);
+            // Check if either contains the other
+            const contains = itemMarket.includes(marketFilter) || marketFilter.includes(itemMarket);
+            if (contains) {
+              console.log('✓ Contains match found');
+            }
+            return contains;
           });
           console.log('After market filter:', data.length, 'records');
           console.log('Market filter applied:', filters.market);
