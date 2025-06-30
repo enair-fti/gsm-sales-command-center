@@ -5,12 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Filter, X } from 'lucide-react';
 import { fetchReferenceData, ReferenceData } from '@/utils/referenceData';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface GlobalFiltersProps {
   filters: {
@@ -18,7 +26,6 @@ interface GlobalFiltersProps {
     advertiser: string;
     station: string;
     market: string;
-    category: string;
     aeName: string;
     quarter: string;
     year: string;
@@ -37,10 +44,10 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
     advertisers: ['All Advertisers'],
     stations: ['All Stations'],
     markets: ['All Markets'],
-    categories: ['All Categories'],
     aeNames: ['All AE Names']
   });
   const [loading, setLoading] = useState(true);
+  const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
 
   // Static data for quarters and years
   const quarters = ['All Quarters', 'Q1', 'Q2', 'Q3', 'Q4'];
@@ -65,6 +72,70 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
     value && !value.startsWith('All')
   );
 
+  const setPopoverOpen = (key: string, open: boolean) => {
+    setOpenPopovers(prev => ({ ...prev, [key]: open }));
+  };
+
+  const SearchableSelect = ({ 
+    value, 
+    onSelect, 
+    options, 
+    placeholder, 
+    popoverKey 
+  }: { 
+    value: string;
+    onSelect: (value: string) => void;
+    options: string[];
+    placeholder: string;
+    popoverKey: string;
+  }) => {
+    return (
+      <Popover 
+        open={openPopovers[popoverKey]} 
+        onOpenChange={(open) => setPopoverOpen(popoverKey, open)}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={openPopovers[popoverKey]}
+            className="w-full justify-between text-sm"
+            disabled={loading}
+          >
+            {value}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+          <Command>
+            <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
+            <CommandEmpty>No {placeholder.toLowerCase()} found.</CommandEmpty>
+            <CommandGroup className="max-h-64 overflow-auto">
+              {options.map((option) => (
+                <CommandItem
+                  key={option}
+                  value={option}
+                  onSelect={(currentValue) => {
+                    onSelect(currentValue);
+                    setPopoverOpen(popoverKey, false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
@@ -85,149 +156,84 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-3">
+        <div className="grid grid-cols-3 gap-4 mb-3">
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Agency</label>
-            <Select
+            <SearchableSelect
               value={filters.agency}
-              onValueChange={(value) => onFilterChange('agency', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Agency" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.agencies.map(agency => (
-                  <SelectItem key={agency} value={agency}>{agency}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSelect={(value) => onFilterChange('agency', value)}
+              options={referenceData.agencies}
+              placeholder="Agency"
+              popoverKey="agency"
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Advertiser</label>
-            <Select
+            <SearchableSelect
               value={filters.advertiser}
-              onValueChange={(value) => onFilterChange('advertiser', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Advertiser" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.advertisers.map(advertiser => (
-                  <SelectItem key={advertiser} value={advertiser}>{advertiser}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSelect={(value) => onFilterChange('advertiser', value)}
+              options={referenceData.advertisers}
+              placeholder="Advertiser"
+              popoverKey="advertiser"
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Station</label>
-            <Select
+            <SearchableSelect
               value={filters.station}
-              onValueChange={(value) => onFilterChange('station', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Station" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.stations.map(station => (
-                  <SelectItem key={station} value={station}>{station}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-600 mb-1 block">Market</label>
-            <Select
-              value={filters.market}
-              onValueChange={(value) => onFilterChange('market', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Market" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.markets.map(market => (
-                  <SelectItem key={market} value={market}>{market}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSelect={(value) => onFilterChange('station', value)}
+              options={referenceData.stations}
+              placeholder="Station"
+              popoverKey="station"
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-3">
           <div>
-            <label className="text-xs text-gray-600 mb-1 block">Category</label>
-            <Select
-              value={filters.category}
-              onValueChange={(value) => onFilterChange('category', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-xs text-gray-600 mb-1 block">Market</label>
+            <SearchableSelect
+              value={filters.market}
+              onSelect={(value) => onFilterChange('market', value)}
+              options={referenceData.markets}
+              placeholder="Market"
+              popoverKey="market"
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">AE Name</label>
-            <Select
+            <SearchableSelect
               value={filters.aeName}
-              onValueChange={(value) => onFilterChange('aeName', value)}
-              disabled={loading}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select AE" />
-              </SelectTrigger>
-              <SelectContent>
-                {referenceData.aeNames.map(aeName => (
-                  <SelectItem key={aeName} value={aeName}>{aeName}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSelect={(value) => onFilterChange('aeName', value)}
+              options={referenceData.aeNames}
+              placeholder="AE Name"
+              popoverKey="aeName"
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Quarter</label>
-            <Select
+            <SearchableSelect
               value={filters.quarter}
-              onValueChange={(value) => onFilterChange('quarter', value)}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Quarter" />
-              </SelectTrigger>
-              <SelectContent>
-                {quarters.map(quarter => (
-                  <SelectItem key={quarter} value={quarter}>{quarter}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSelect={(value) => onFilterChange('quarter', value)}
+              options={quarters}
+              placeholder="Quarter"
+              popoverKey="quarter"
+            />
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Year</label>
-            <Select
+            <SearchableSelect
               value={filters.year}
-              onValueChange={(value) => onFilterChange('year', value)}
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Select Year" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map(year => (
-                  <SelectItem key={year} value={year}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onSelect={(value) => onFilterChange('year', value)}
+              options={years}
+              placeholder="Year"
+              popoverKey="year"
+            />
           </div>
         </div>
 
