@@ -19,7 +19,7 @@ interface MonthlyProjectionsProps {
     agency: string;
     advertiser: string;
     station: string;
-    category: string;
+    market: string;
     aeName: string;
     quarter: string;
     year: string;
@@ -50,9 +50,6 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         }
         if (filters.station && !filters.station.startsWith('All')) {
           data = data.filter(item => item.station === filters.station);
-        }
-        if (filters.category && !filters.category.startsWith('All')) {
-          data = data.filter(item => item.category === filters.category);
         }
         if (filters.aeName && !filters.aeName.startsWith('All')) {
           data = data.filter(item => item.aeName === filters.aeName);
@@ -94,17 +91,18 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   };
 
   const summaryData = {
-    totalBilling: filteredData.reduce((sum, item) => sum + Number(item.billing || 0), 0),
-    totalProjected: filteredData.reduce((sum, item) => sum + Number(item.projectedBilling || 0), 0),
-    totalMarketActual: filteredData.reduce((sum, item) => sum + Number(item.actualMarket || 0), 0),
-    totalMarketProjected: filteredData.reduce((sum, item) => sum + Number(item.projectedMarket || 0), 0),
+    totalBilling: filteredData.reduce((sum, item) => sum + (Number(item.billing) || 0), 0),
+    totalProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedBilling) || 0), 0),
+    totalMarketActual: filteredData.reduce((sum, item) => sum + (Number(item.actualMarket) || 0), 0),
+    totalMarketProjected: filteredData.reduce((sum, item) => sum + (Number(item.projectedMarket) || 0), 0),
     advertisers: filteredData.length
   };
 
   // Calculate category breakdown for pie chart
   const categoryBreakdown = filteredData.reduce((acc, item) => {
     const category = item.category || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + Number(item.billing || 0);
+    const billingValue = Number(item.billing) || 0;
+    acc[category] = (acc[category] || 0) + billingValue;
     return acc;
   }, {} as Record<string, number>);
 
@@ -290,7 +288,13 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
               </thead>
               <tbody>
                 {filteredData.map((row, index) => {
-                  const attainment = parseFloat(calculateAttainment(Number(row.billing || 0), Number(row.projectedBilling || 0)));
+                  const billing = Number(row.billing) || 0;
+                  const projectedBilling = Number(row.projectedBilling) || 0;
+                  const variance = Number(row.variance) || 0;
+                  const actualMarket = Number(row.actualMarket) || 0;
+                  const projectedMarket = Number(row.projectedMarket) || 0;
+                  const attainment = parseFloat(calculateAttainment(billing, projectedBilling));
+                  
                   return (
                     <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-2">
@@ -304,22 +308,22 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
                           {row.category}
                         </Badge>
                       </td>
-                      <td className="py-3 px-2 text-right font-bold">${Number(row.billing || 0).toLocaleString()}</td>
-                      <td className="py-3 px-2 text-right text-blue-600">${Number(row.projectedBilling || 0).toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right font-bold">${billing.toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right text-blue-600">${projectedBilling.toLocaleString()}</td>
                       <td className={`py-3 px-2 text-right font-medium ${
                         attainment >= 100 ? 'text-green-600' : attainment >= 90 ? 'text-yellow-600' : 'text-red-600'
                       }`}>
                         {attainment}%
                       </td>
                       <td className={`py-3 px-2 text-right font-medium ${
-                        Number(row.variance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        variance >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {Number(row.variance || 0) >= 0 ? '+' : ''}${Number(row.variance || 0).toLocaleString()}
+                        {variance >= 0 ? '+' : ''}${variance.toLocaleString()}
                       </td>
                       <td className="py-3 px-2 text-right">
-                        <div className="font-medium">${Number(row.actualMarket || 0).toLocaleString()}</div>
+                        <div className="font-medium">${actualMarket.toLocaleString()}</div>
                         <div className="text-xs text-gray-500">
-                          vs ${Number(row.projectedMarket || 0).toLocaleString()} proj
+                          vs ${projectedMarket.toLocaleString()} proj
                         </div>
                       </td>
                     </tr>
