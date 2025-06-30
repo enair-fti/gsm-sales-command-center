@@ -18,14 +18,7 @@ interface OpenHeadlinesProps {
 }
 
 const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
-  // Add the missing properties with default values for the hook
-  const extendedFilters = {
-    ...filters,
-    category: 'All Categories',
-    aeName: 'All AE Names'
-  };
-
-  const { headlineData, loading } = useHeadlineData(extendedFilters);
+  const { headlineData, loading } = useHeadlineData(filters);
 
   const handleExport = () => {
     exportHeadlineData(headlineData);
