@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +34,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
 
-  // Mock data for pie chart
+  // Mock data for pie chart - replace with real category data from Supabase
   const mockPieData = [
     { name: 'Automotive', value: 125000, percentage: '28.5' },
     { name: 'Healthcare', value: 98000, percentage: '22.3' },
@@ -123,6 +122,9 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         <div>
           <h2 className="text-xl font-bold text-gray-900">Monthly Projections (Darwin System)</h2>
           <p className="text-sm text-gray-600">Revenue projections by advertiser, station, and AE</p>
+          <Badge variant="outline" className="text-xs mt-1 bg-yellow-50 text-yellow-700 border-yellow-200">
+            Mock Data - Category breakdown uses sample data
+          </Badge>
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
@@ -219,6 +221,11 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       <Card>
         <CardHeader>
           <CardTitle>Category Distribution</CardTitle>
+          <CardDescription>
+            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+              Mock Data - Sample category breakdown
+            </Badge>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-4">

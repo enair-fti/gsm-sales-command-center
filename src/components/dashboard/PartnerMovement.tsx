@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +32,7 @@ const PartnerMovement: React.FC<PartnerMovementProps> = ({ station, filters }) =
     const fetchMovementData = async () => {
       setLoading(true);
       
-      // Mock data - replace with actual API calls
+      // Mock data - replace with actual API calls to Supabase
       const mockData = {
         nonReturners: [
           { agency: 'MediaCom', lastSpend: 45000, lastQuarter: 'Q4 2024', reason: 'Contract ended', category: 'Automotive' },
@@ -97,6 +96,9 @@ const PartnerMovement: React.FC<PartnerMovementProps> = ({ station, filters }) =
         <div>
           <h2 className="text-xl font-bold text-gray-900">Partner Movement Analysis</h2>
           <p className="text-sm text-gray-600">Track agency spending patterns and advertiser activity trends</p>
+          <Badge variant="outline" className="text-xs mt-1 bg-yellow-50 text-yellow-700 border-yellow-200">
+            Mock Data - All partner movement data is sample data
+          </Badge>
         </div>
         <div className="flex items-center space-x-3">
           <Badge variant="outline" className="text-sm">
