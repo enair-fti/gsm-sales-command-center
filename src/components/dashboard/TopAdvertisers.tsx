@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,18 +31,36 @@ const TopAdvertisers: React.FC<TopAdvertisersProps> = ({ station, filters }) => 
         
         let data = await fetchTopAdvertisersData(filters);
         
-        // Apply additional filters
+        // Apply case-insensitive filters
         if (filters.agency && !filters.agency.startsWith('All')) {
-          data = data.filter(item => item.agency === filters.agency);
+          data = data.filter(item => 
+            item.agency && item.agency.toLowerCase().includes(filters.agency.toLowerCase())
+          );
         }
         if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-          data = data.filter(item => item.advertiser === filters.advertiser);
+          data = data.filter(item => 
+            item.advertiser && item.advertiser.toLowerCase().includes(filters.advertiser.toLowerCase())
+          );
+        }
+        if (filters.station && !filters.station.startsWith('All')) {
+          data = data.filter(item => 
+            item.station && item.station.toLowerCase().includes(filters.station.toLowerCase())
+          );
         }
         if (filters.category && !filters.category.startsWith('All')) {
-          data = data.filter(item => item.category === filters.category);
+          data = data.filter(item => 
+            item.category && item.category.toLowerCase().includes(filters.category.toLowerCase())
+          );
+        }
+        if (filters.aeName && !filters.aeName.startsWith('All')) {
+          data = data.filter(item => 
+            item.aeName && item.aeName.toLowerCase().includes(filters.aeName.toLowerCase())
+          );
         }
         if (selectedCategory !== 'All') {
-          data = data.filter(item => item.category === selectedCategory);
+          data = data.filter(item => 
+            item.category && item.category.toLowerCase().includes(selectedCategory.toLowerCase())
+          );
         }
 
         // Sort data

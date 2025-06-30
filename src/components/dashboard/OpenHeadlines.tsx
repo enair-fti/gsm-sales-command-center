@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +25,30 @@ const OpenHeadlines: React.FC<OpenHeadlinesProps> = ({ filters }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await fetchHeadlineData(filters);
+        let data = await fetchHeadlineData(filters);
+        
+        // Apply case-insensitive filters
+        if (filters.agency && !filters.agency.startsWith('All')) {
+          data = data.filter(item => 
+            item.access_name && item.access_name.toLowerCase().includes(filters.agency.toLowerCase())
+          );
+        }
+        if (filters.advertiser && !filters.advertiser.startsWith('All')) {
+          data = data.filter(item => 
+            item.client_name && item.client_name.toLowerCase().includes(filters.advertiser.toLowerCase())
+          );
+        }
+        if (filters.station && !filters.station.startsWith('All')) {
+          data = data.filter(item => 
+            item.station_name && item.station_name.toLowerCase().includes(filters.station.toLowerCase())
+          );
+        }
+        if (filters.market && !filters.market.startsWith('All')) {
+          data = data.filter(item => 
+            item.market && item.market.toLowerCase().includes(filters.market.toLowerCase())
+          );
+        }
+        
         setHeadlineData(data);
       } catch (error) {
         console.error('Error fetching headline data:', error);
