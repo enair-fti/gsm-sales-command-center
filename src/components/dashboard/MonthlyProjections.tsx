@@ -46,7 +46,10 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   const calculateCategoryBreakdown = (data: any[]) => {
     const categoryTotals = data.reduce((acc: any, item: any) => {
       const category = item.category || 'Other';
-      const billing = parseFloat(item.billing?.toString().replace(/[,$]/g, '')) || 0;
+      const billingValue = item.billing;
+      // Safely convert billing to number, handling unknown types
+      const billing = typeof billingValue === 'number' ? billingValue : 
+                     typeof billingValue === 'string' ? parseFloat(billingValue.replace(/[,$]/g, '')) : 0;
       
       if (!acc[category]) {
         acc[category] = 0;
@@ -55,14 +58,20 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
       return acc;
     }, {});
 
-    const total = Object.values(categoryTotals).reduce((sum: number, value: any) => sum + value, 0);
+    const totalValue = Object.values(categoryTotals).reduce((sum: number, value: any) => {
+      const numValue = typeof value === 'number' ? value : 0;
+      return sum + numValue;
+    }, 0);
     
     return Object.entries(categoryTotals)
-      .map(([category, value]: [string, any]) => ({
-        name: category,
-        value: value,
-        percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0'
-      }))
+      .map(([category, value]: [string, any]) => {
+        const numValue = typeof value === 'number' ? value : 0;
+        return {
+          name: category,
+          value: numValue,
+          percentage: totalValue > 0 ? ((numValue / totalValue) * 100).toFixed(1) : '0'
+        };
+      })
       .sort((a, b) => b.value - a.value)
       .slice(0, 6); // Top 6 categories
   };
@@ -80,13 +89,22 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         
         // Transform and calculate metrics from real data
         const transformedData = data.map((item: any) => {
-          // Parse billing values, handling different formats
-          const billing = parseFloat(item['Q3-2025 Billing$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedBilling = parseFloat(item['Proj Billing$']?.toString().replace(/[,$]/g, '')) || 0;
-          const actualMarket = parseFloat(item['Q3-2025 Market$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedMarket = parseFloat(item['Proj Market$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedDiff = parseFloat(item['Proj Diff$']?.toString().replace(/[,$]/g, '')) || 0;
-          const projectedShare = parseFloat(item['Proj Share%']?.toString().replace(/%/g, '')) || 0;
+          // Parse billing values, handling different formats and unknown types
+          const parseBillingValue = (value: any): number => {
+            if (typeof value === 'number') return value;
+            if (typeof value === 'string') return parseFloat(value.replace(/[,$]/g, '')) || 0;
+            return 0;
+          };
+
+          const billing = parseBillingValue(item['Q3-2025 Billing$']);
+          const projectedBilling = parseBillingValue(item['Proj Billing$']);
+          const actualMarket = parseBillingValue(item['Q3-2025 Market$']);
+          const projectedMarket = parseBillingValue(item['Proj Market$']);
+          const projectedDiff = parseBillingValue(item['Proj Diff$']);
+          const projectedShareValue = item['Proj Share%'];
+          const projectedShare = typeof projectedShareValue === 'string' ? 
+                                parseFloat(projectedShareValue.replace(/%/g, '')) || 0 : 
+                                typeof projectedShareValue === 'number' ? projectedShareValue : 0;
 
           return {
             station: item['Station Code'] || 'Unknown',
