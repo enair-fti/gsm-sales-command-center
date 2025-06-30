@@ -99,31 +99,61 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       Month: 'Jan 2024',
       Agency: 'GroupM',
       Advertiser: 'Toyota Motors',
-      '# Headlines': '45',
-      'Billing $': '485000',
-      'Mkt $': '2100000',
-      'Rep %': '23.1',
-      Custom: 'High Priority'
+      '# Headlines': 45,
+      'Billing $': 485000,
+      'Mkt $': 2100000,
+      'Rep %': 23.1,
+      Custom: 1
     },
     {
       Month: 'Feb 2024',
       Agency: 'Zenith Media',
       Advertiser: 'McDonald\'s Corporation',
-      '# Headlines': '38',
-      'Billing $': '423000',
-      'Mkt $': '1850000',
-      'Rep %': '22.9',
-      Custom: 'Standard'
+      '# Headlines': 38,
+      'Billing $': 423000,
+      'Mkt $': 1850000,
+      'Rep %': 22.9,
+      Custom: 2
     },
     {
       Month: 'Mar 2024',
       Agency: 'Direct',
       Advertiser: 'Local Auto Dealer',
-      '# Headlines': '52',
-      'Billing $': '380000',
-      'Mkt $': '1900000',
-      'Rep %': '20.0',
-      Custom: 'Growth'
+      '# Headlines': 52,
+      'Billing $': 380000,
+      'Mkt $': 1900000,
+      'Rep %': 20.0,
+      Custom: 1
+    },
+    {
+      Month: 'Apr 2024',
+      Agency: 'GroupM',
+      Advertiser: 'Regional Bank',
+      '# Headlines': 41,
+      'Billing $': 510000,
+      'Mkt $': 2200000,
+      'Rep %': 23.2,
+      Custom: 1
+    },
+    {
+      Month: 'May 2024',
+      Agency: 'Havas',
+      Advertiser: 'Healthcare System',
+      '# Headlines': 35,
+      'Billing $': 390000,
+      'Mkt $': 1750000,
+      'Rep %': 22.3,
+      Custom: 2
+    },
+    {
+      Month: 'Jun 2024',
+      Agency: 'Zenith Media',
+      Advertiser: 'Retail Chain',
+      '# Headlines': 47,
+      'Billing $': 445000,
+      'Mkt $': 1950000,
+      'Rep %': 22.8,
+      Custom: 1
     }
   ];
 
@@ -178,6 +208,8 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       try {
         setLoading(true);
         setHasError(false);
+        
+        console.log('Fetching dashboard data with filters:', filters);
         
         // Fetch all data sources in parallel
         const [darwinProjections, competitiveAnalysis, pacingInfo] = await Promise.all([

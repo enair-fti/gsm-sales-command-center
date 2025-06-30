@@ -4562,11 +4562,11 @@ export type Database = {
           Month: string
           Agency: string
           Advertiser: string
-          "# Headlines": string
-          "Billing $": string
-          "Mkt $": string
-          "Rep %": string
-          Custom: string
+          "# Headlines": number
+          "Billing $": number
+          "Mkt $": number
+          "Rep %": number
+          Custom: number
         }[]
       }
       fetch_darwin_projections: {
