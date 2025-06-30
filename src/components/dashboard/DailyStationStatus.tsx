@@ -180,9 +180,6 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
-          <Badge variant="outline" className="text-sm">
-            Data Source: {isRealData ? 'Darwin Projections' : 'Mock Data'}
-          </Badge>
           {!isRealData && (
             <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
               Mock Data - Sample projections data
