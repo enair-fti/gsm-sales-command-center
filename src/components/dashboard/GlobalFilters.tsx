@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Filter, X } from 'lucide-react';
+import { fetchReferenceData, ReferenceData } from '@/utils/referenceData';
 
 interface GlobalFiltersProps {
   filters: {
@@ -22,13 +23,32 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
   onFilterChange,
   onClearFilters
 }) => {
-  // Static data for now - these should come from Supabase queries
-  const agencies = ['All Agencies', 'Zenith Media', 'GroupM', 'Publicis', 'Omnicom', 'Havas'];
-  const advertisers = ['All Advertisers', 'Toyota', 'McDonald\'s', 'Coca-Cola', 'Walmart', 'Apple'];
-  const stations = ['All Stations', 'WPRO', 'WBRU', 'WKFD', 'WXKS', 'WFHN'];
-  const markets = ['All Markets', 'Providence', 'Boston Metro', 'Hartford', 'Springfield', 'Sinclair'];
+  const [referenceData, setReferenceData] = useState<ReferenceData>({
+    agencies: ['All Agencies'],
+    advertisers: ['All Advertisers'],
+    stations: ['All Stations'],
+    markets: ['All Markets']
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Static data for quarters and years
   const quarters = ['All Quarters', 'Q1', 'Q2', 'Q3', 'Q4'];
   const years = ['All Years', '2024', '2025'];
+
+  useEffect(() => {
+    const loadReferenceData = async () => {
+      try {
+        const data = await fetchReferenceData();
+        setReferenceData(data);
+      } catch (error) {
+        console.error('Failed to load reference data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReferenceData();
+  }, []);
 
   const activeFilters = Object.entries(filters).filter(([_, value]) => 
     value && !value.startsWith('All')
@@ -41,6 +61,7 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="text-sm font-medium text-gray-700">Global Filters</span>
+            {loading && <span className="text-xs text-gray-500">(Loading...)</span>}
           </div>
           {activeFilters.length > 0 && (
             <button
@@ -60,8 +81,9 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               value={filters.agency}
               onChange={(e) => onFilterChange('agency', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              disabled={loading}
             >
-              {agencies.map(agency => (
+              {referenceData.agencies.map(agency => (
                 <option key={agency} value={agency}>{agency}</option>
               ))}
             </select>
@@ -73,8 +95,9 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               value={filters.advertiser}
               onChange={(e) => onFilterChange('advertiser', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              disabled={loading}
             >
-              {advertisers.map(advertiser => (
+              {referenceData.advertisers.map(advertiser => (
                 <option key={advertiser} value={advertiser}>{advertiser}</option>
               ))}
             </select>
@@ -86,8 +109,9 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               value={filters.station}
               onChange={(e) => onFilterChange('station', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              disabled={loading}
             >
-              {stations.map(station => (
+              {referenceData.stations.map(station => (
                 <option key={station} value={station}>{station}</option>
               ))}
             </select>
@@ -99,8 +123,9 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
               value={filters.market}
               onChange={(e) => onFilterChange('market', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              disabled={loading}
             >
-              {markets.map(market => (
+              {referenceData.markets.map(market => (
                 <option key={market} value={market}>{market}</option>
               ))}
             </select>
