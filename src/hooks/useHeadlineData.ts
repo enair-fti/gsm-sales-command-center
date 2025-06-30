@@ -17,29 +17,21 @@ export const useHeadlineData = (filters: HeadlineFilters) => {
   const [allHeadlineData, setAllHeadlineData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Clean station name by removing -TV suffix
-  const cleanStationName = (stationName: string) => {
-    if (!stationName) return stationName;
-    return stationName.replace(/-TV$/i, '').trim();
-  };
-
-  // Normalize strings for comparison
-  const normalizeString = (str: string) => {
-    if (!str) return '';
-    return str.replace(/[-\s()]/g, '').toLowerCase().trim();
-  };
-
-  // Check if a value matches a filter
-  const matchesFilter = (value: string, filter: string) => {
-    if (!filter || filter.startsWith('All')) return true;
-    if (!value) return false;
+  // Simple filter check - returns true if filter should include this item
+  const shouldInclude = (itemValue: string, filterValue: string) => {
+    // If filter is "All X" or empty, include everything
+    if (!filterValue || filterValue.startsWith('All ')) {
+      return true;
+    }
     
-    const normalizedValue = normalizeString(value);
-    const normalizedFilter = normalizeString(filter);
+    // If item value is empty, exclude it
+    if (!itemValue) {
+      return false;
+    }
     
-    return normalizedValue === normalizedFilter || 
-           normalizedValue.includes(normalizedFilter) || 
-           normalizedFilter.includes(normalizedValue);
+    // Simple case-insensitive comparison
+    return itemValue.toLowerCase().includes(filterValue.toLowerCase()) ||
+           filterValue.toLowerCase().includes(itemValue.toLowerCase());
   };
 
   // Fetch all data once on mount
@@ -48,15 +40,9 @@ export const useHeadlineData = (filters: HeadlineFilters) => {
       try {
         setLoading(true);
         const data = await fetchHeadlineData();
-        
-        // Clean station names
-        const cleanedData = data.map(item => ({
-          ...item,
-          station_name: cleanStationName(item.station_name)
-        }));
-        
-        setAllHeadlineData(cleanedData);
-        console.log('Fetched all headline data:', cleanedData.length, 'records');
+        setAllHeadlineData(data);
+        console.log('Fetched all headline data:', data.length, 'records');
+        console.log('Sample record:', data[0]);
       } catch (error) {
         console.error('Error fetching headline data:', error);
         setAllHeadlineData([]);
@@ -70,13 +56,23 @@ export const useHeadlineData = (filters: HeadlineFilters) => {
 
   // Filter data based on current filters
   const filteredData = useMemo(() => {
-    return allHeadlineData.filter(item => {
-      return matchesFilter(item.access_name, filters.agency) &&
-             matchesFilter(item.client_name, filters.advertiser) &&
-             (matchesFilter(item.station_name, filters.station) || matchesFilter(item.station_code, filters.station)) &&
-             matchesFilter(item.market, filters.market) &&
-             matchesFilter(item.contact_name, filters.aeName);
+    console.log('Applying filters:', filters);
+    
+    const filtered = allHeadlineData.filter(item => {
+      const agencyMatch = shouldInclude(item.access_name, filters.agency);
+      const advertiserMatch = shouldInclude(item.client_name, filters.advertiser);
+      const stationMatch = shouldInclude(item.station_name, filters.station) || 
+                          shouldInclude(item.station_code, filters.station);
+      const marketMatch = shouldInclude(item.market, filters.market);
+      const aeMatch = shouldInclude(item.contact_name, filters.aeName);
+      
+      const result = agencyMatch && advertiserMatch && stationMatch && marketMatch && aeMatch;
+      
+      return result;
     });
+    
+    console.log('Filtered data:', filtered.length, 'records');
+    return filtered;
   }, [allHeadlineData, filters]);
 
   return {
