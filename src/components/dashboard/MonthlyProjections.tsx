@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +101,8 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   const categoryBreakdown = filteredData.reduce((acc, item) => {
     const category = item.category || 'Uncategorized';
     const billingValue = Number(item.billing) || 0;
-    acc[category] = (acc[category] || 0) + billingValue;
+    const currentValue = acc[category] || 0;
+    acc[category] = currentValue + billingValue;
     return acc;
   }, {} as Record<string, number>);
 
