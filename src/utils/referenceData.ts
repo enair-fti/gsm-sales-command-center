@@ -192,7 +192,7 @@ export async function fetchDarwinProjections(filters: any = {}) {
         market: 'Unknown', // Not available in Darwin table
         advertiser: row['Advertiser Name'] || 'Unknown',
         aeName: row['Seller Code'] || 'Unknown',
-        agency: row['Agency Name'] || 'Unknown',
+        agency: row['Agency Name'] || 'Unknown', // Add missing agency property
         billing: parseInt(row['Q3-2025 Billing$']) || 0,
         projectedBilling: parseInt(row['Proj Billing$']) || 0,
         projectedMarket: parseInt(row['Proj Market$']) || 0,
@@ -218,6 +218,7 @@ function generateMockDarwinData() {
       market: 'Providence',
       advertiser: 'AutoNation',
       aeName: 'Mike Sullivan',
+      agency: 'GroupM', // Add missing agency property
       billing: 45200,
       projectedBilling: 52000,
       projectedMarket: 180000,
@@ -230,6 +231,7 @@ function generateMockDarwinData() {
       market: 'Providence',
       advertiser: 'Regional Medical Center',
       aeName: 'Lisa Rodriguez',
+      agency: 'Zenith Media', // Add missing agency property
       billing: 38700,
       projectedBilling: 41000,
       projectedMarket: 220000,
@@ -242,6 +244,7 @@ function generateMockDarwinData() {
       market: 'Hartford',
       advertiser: 'Premier Real Estate',
       aeName: 'James Wilson',
+      agency: 'Direct', // Add missing agency property
       billing: 32500,
       projectedBilling: 35000,
       projectedMarket: 150000,
