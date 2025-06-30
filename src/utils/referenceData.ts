@@ -160,9 +160,9 @@ export async function fetchDarwinProjections(filters: any = {}) {
   try {
     console.log('Fetching Darwin projections with filters:', filters);
     
-    // Fetch from the actual Darwin projections table
+    // Fetch from the correct _temp schema table
     let query = supabase
-      .from('_temp.darwin-sales-projections-20250624_Cris View')
+      .from('"darwin-sales-projections-20250624_Cris View"')  // Correct table reference
       .select('*');
 
     // Apply filters if they exist and are not "All"
