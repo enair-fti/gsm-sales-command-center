@@ -4,6 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Filter, X } from 'lucide-react';
 import { fetchReferenceData, ReferenceData } from '@/utils/referenceData';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface GlobalFiltersProps {
   filters: {
@@ -11,6 +18,8 @@ interface GlobalFiltersProps {
     advertiser: string;
     station: string;
     market: string;
+    category: string;
+    aeName: string;
     quarter: string;
     year: string;
   };
@@ -27,7 +36,9 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
     agencies: ['All Agencies'],
     advertisers: ['All Advertisers'],
     stations: ['All Stations'],
-    markets: ['All Markets']
+    markets: ['All Markets'],
+    categories: ['All Categories'],
+    aeNames: ['All AE Names']
   });
   const [loading, setLoading] = useState(true);
 
@@ -74,87 +85,149 @@ const GlobalFilters: React.FC<GlobalFiltersProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-6 gap-4 mb-3">
+        <div className="grid grid-cols-4 gap-4 mb-3">
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Agency</label>
-            <select
+            <Select
               value={filters.agency}
-              onChange={(e) => onFilterChange('agency', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onValueChange={(value) => onFilterChange('agency', value)}
               disabled={loading}
             >
-              {referenceData.agencies.map(agency => (
-                <option key={agency} value={agency}>{agency}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select Agency" />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceData.agencies.map(agency => (
+                  <SelectItem key={agency} value={agency}>{agency}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Advertiser</label>
-            <select
+            <Select
               value={filters.advertiser}
-              onChange={(e) => onFilterChange('advertiser', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onValueChange={(value) => onFilterChange('advertiser', value)}
               disabled={loading}
             >
-              {referenceData.advertisers.map(advertiser => (
-                <option key={advertiser} value={advertiser}>{advertiser}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select Advertiser" />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceData.advertisers.map(advertiser => (
+                  <SelectItem key={advertiser} value={advertiser}>{advertiser}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Station</label>
-            <select
+            <Select
               value={filters.station}
-              onChange={(e) => onFilterChange('station', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onValueChange={(value) => onFilterChange('station', value)}
               disabled={loading}
             >
-              {referenceData.stations.map(station => (
-                <option key={station} value={station}>{station}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select Station" />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceData.stations.map(station => (
+                  <SelectItem key={station} value={station}>{station}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Market</label>
-            <select
+            <Select
               value={filters.market}
-              onChange={(e) => onFilterChange('market', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onValueChange={(value) => onFilterChange('market', value)}
               disabled={loading}
             >
-              {referenceData.markets.map(market => (
-                <option key={market} value={market}>{market}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select Market" />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceData.markets.map(market => (
+                  <SelectItem key={market} value={market}>{market}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4 mb-3">
+          <div>
+            <label className="text-xs text-gray-600 mb-1 block">Category</label>
+            <Select
+              value={filters.category}
+              onValueChange={(value) => onFilterChange('category', value)}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceData.categories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-600 mb-1 block">AE Name</label>
+            <Select
+              value={filters.aeName}
+              onValueChange={(value) => onFilterChange('aeName', value)}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select AE" />
+              </SelectTrigger>
+              <SelectContent>
+                {referenceData.aeNames.map(aeName => (
+                  <SelectItem key={aeName} value={aeName}>{aeName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Quarter</label>
-            <select
+            <Select
               value={filters.quarter}
-              onChange={(e) => onFilterChange('quarter', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onValueChange={(value) => onFilterChange('quarter', value)}
             >
-              {quarters.map(quarter => (
-                <option key={quarter} value={quarter}>{quarter}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select Quarter" />
+              </SelectTrigger>
+              <SelectContent>
+                {quarters.map(quarter => (
+                  <SelectItem key={quarter} value={quarter}>{quarter}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs text-gray-600 mb-1 block">Year</label>
-            <select
+            <Select
               value={filters.year}
-              onChange={(e) => onFilterChange('year', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              onValueChange={(value) => onFilterChange('year', value)}
             >
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-sm">
+                <SelectValue placeholder="Select Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map(year => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

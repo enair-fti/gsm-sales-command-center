@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronUp, ChevronDown, Filter } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { fetchDarwinProjections } from '@/utils/referenceData';
 
 interface MonthlyProjectionsProps {
   station: string;
@@ -9,6 +12,8 @@ interface MonthlyProjectionsProps {
     agency: string;
     advertiser: string;
     station: string;
+    category: string;
+    aeName: string;
     quarter: string;
     year: string;
   };
@@ -18,81 +23,44 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   const [sortField, setSortField] = useState<'billing' | 'projected' | 'market'>('billing');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterMarket, setFilterMarket] = useState<string>('All');
+  const [projectionsData, setProjectionsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const projectionsData = [
-    {
-      station: 'WPRO-FM',
-      market: 'Providence',
-      advertiser: 'AutoNation',
-      aeName: 'Mike Sullivan',
-      billing: 45200,
-      projectedBilling: 52000,
-      projectedMarket: 180000,
-      actualMarket: 165000,
-      variance: 6800,
-      category: 'Automotive'
-    },
-    {
-      station: 'WBRU-FM',
-      market: 'Providence',
-      advertiser: 'Regional Medical Center',
-      aeName: 'Lisa Rodriguez',
-      billing: 38700,
-      projectedBilling: 41000,
-      projectedMarket: 220000,
-      actualMarket: 205000,
-      variance: 2300,
-      category: 'Healthcare'
-    },
-    {
-      station: 'WKFD-FM',
-      market: 'Hartford',
-      advertiser: 'Premier Real Estate',
-      aeName: 'James Wilson',
-      billing: 32500,
-      projectedBilling: 35000,
-      projectedMarket: 150000,
-      actualMarket: 142000,
-      variance: 2500,
-      category: 'Real Estate'
-    },
-    {
-      station: 'WXKS-FM',
-      market: 'Boston Metro',
-      advertiser: 'Local Restaurant Group',
-      aeName: 'Sarah Chen',
-      billing: 28900,
-      projectedBilling: 30000,
-      projectedMarket: 280000,
-      actualMarket: 275000,
-      variance: 1100,
-      category: 'Food & Dining'
-    },
-    {
-      station: 'WFHN-FM',
-      market: 'Boston Metro',
-      advertiser: 'Tech Solutions Inc',
-      aeName: 'David Park',
-      billing: 24600,
-      projectedBilling: 28000,
-      projectedMarket: 95000,
-      actualMarket: 88000,
-      variance: 3400,
-      category: 'Technology'
-    },
-    {
-      station: 'WPRO-AM',
-      market: 'Providence',
-      advertiser: 'Insurance Partners',
-      aeName: 'Jennifer Adams',
-      billing: 23100,
-      projectedBilling: 25000,
-      projectedMarket: 125000,
-      actualMarket: 118000,
-      variance: 1900,
-      category: 'Insurance'
-    }
-  ];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        let data = await fetchDarwinProjections(filters);
+        
+        // Apply filters
+        if (filters.agency && !filters.agency.startsWith('All')) {
+          data = data.filter(item => item.agency === filters.agency);
+        }
+        if (filters.advertiser && !filters.advertiser.startsWith('All')) {
+          data = data.filter(item => item.advertiser === filters.advertiser);
+        }
+        if (filters.station && !filters.station.startsWith('All')) {
+          data = data.filter(item => item.station === filters.station);
+        }
+        if (filters.category && !filters.category.startsWith('All')) {
+          data = data.filter(item => item.category === filters.category);
+        }
+        if (filters.aeName && !filters.aeName.startsWith('All')) {
+          data = data.filter(item => item.aeName === filters.aeName);
+        }
+        
+        setProjectionsData(data);
+      } catch (error) {
+        console.error('Error fetching projections data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [station, filters]);
 
   const markets = ['All', ...Array.from(new Set(projectionsData.map(item => item.market)))];
 
@@ -126,6 +94,27 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
     advertisers: filteredData.length
   };
 
+  // Calculate category breakdown for pie chart
+  const categoryBreakdown = filteredData.reduce((acc, item) => {
+    const category = item.category || 'Uncategorized';
+    acc[category] = (acc[category] || 0) + item.billing;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const pieData = Object.entries(categoryBreakdown).map(([category, value]) => ({
+    name: category,
+    value,
+    percentage: ((value / summaryData.totalBilling) * 100).toFixed(1)
+  }));
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading projections data...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-auto space-y-6">
       {/* Header with Filters */}
@@ -153,8 +142,8 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* Summary Cards and Category Pie Chart */}
+      <div className="grid grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600">Total Billing</CardTitle>
@@ -195,7 +184,57 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
             <div className="text-sm text-gray-600">In selected market(s)</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Category Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={20}
+                    outerRadius={50}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Billing']} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Category Legend */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Category Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-4">
+            {pieData.map((entry, index) => (
+              <div key={entry.name} className="flex items-center space-x-2">
+                <div 
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{entry.name}</div>
+                  <div className="text-xs text-gray-500">{entry.percentage}% • ${Number(entry.value).toLocaleString()}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Projections Table */}
       <Card>

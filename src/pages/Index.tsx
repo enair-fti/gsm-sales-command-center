@@ -17,6 +17,8 @@ const Index = () => {
     advertiser: 'All Advertisers',
     station: 'All Stations',
     market: 'All Markets',
+    category: 'All Categories',
+    aeName: 'All AE Names',
     quarter: 'All Quarters',
     year: 'All Years'
   });
@@ -39,6 +41,8 @@ const Index = () => {
       advertiser: 'All Advertisers',
       station: 'All Stations',
       market: 'All Markets',
+      category: 'All Categories',
+      aeName: 'All AE Names',
       quarter: 'All Quarters',
       year: 'All Years'
     };
