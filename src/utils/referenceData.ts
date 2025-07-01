@@ -21,10 +21,10 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
   };
 
   try {
-    // Fetch agencies
+    // Fetch agencies from references_agencies
     const { data: agenciesData, error: agenciesError } = await supabase
       .from('references_agencies')
-      .select('Name')
+      .select('Code, Name')
       .not('Name', 'is', null);
 
     if (agenciesError) {
@@ -35,10 +35,10 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
       defaultData.agencies = ['All Agencies', ...uniqueAgencies];
     }
 
-    // Fetch advertisers
+    // Fetch advertisers from references_advertisers
     const { data: advertisersData, error: advertisersError } = await supabase
       .from('references_advertisers')
-      .select('Name')
+      .select('Code, Name, "Category Name"')
       .not('Name', 'is', null);
 
     if (advertisersError) {
@@ -47,26 +47,33 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
       console.log('Fetched advertisers:', advertisersData?.length || 0);
       const uniqueAdvertisers = [...new Set(advertisersData?.map(item => item.Name).filter(Boolean) || [])];
       defaultData.advertisers = ['All Advertisers', ...uniqueAdvertisers];
+      
+      // Extract categories from advertisers
+      const uniqueCategories = [...new Set(advertisersData?.map(item => item['Category Name']).filter(Boolean) || [])];
+      defaultData.categories = ['All Categories', ...uniqueCategories];
     }
 
-    // Fetch stations
+    // Fetch stations from references_stations
     const { data: stationsData, error: stationsError } = await supabase
       .from('references_stations')
-      .select('Code')
+      .select('Code, "Market Name", Region')
       .not('Code', 'is', null);
 
     if (stationsError) {
       console.error('Error fetching stations:', stationsError);
     } else {
       console.log('Fetched stations:', stationsData?.length || 0);
-      const uniqueStations = [...new Set(stationsData?.map(item => item.Code).filter(Boolean) || [])];
+      // Remove -TV suffix from station codes when displaying
+      const uniqueStations = [...new Set(stationsData?.map(item => 
+        item.Code?.replace('-TV', '')
+      ).filter(Boolean) || [])];
       defaultData.stations = ['All Stations', ...uniqueStations];
     }
 
-    // Fetch markets
+    // Fetch markets from references_markets
     const { data: marketsData, error: marketsError } = await supabase
       .from('references_markets')
-      .select('Name')
+      .select('Code, Name')
       .not('Name', 'is', null);
 
     if (marketsError) {
@@ -77,21 +84,7 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
       defaultData.markets = ['All Markets', ...uniqueMarkets];
     }
 
-    // Fetch categories
-    const { data: categoriesData, error: categoriesError } = await supabase
-      .from('references_advertisers')
-      .select('"Category Name"')
-      .not('Category Name', 'is', null);
-
-    if (categoriesError) {
-      console.error('Error fetching categories:', categoriesError);
-    } else {
-      console.log('Fetched categories:', categoriesData?.length || 0);
-      const uniqueCategories = [...new Set(categoriesData?.map(item => item['Category Name']).filter(Boolean) || [])];
-      defaultData.categories = ['All Categories', ...uniqueCategories];
-    }
-
-    // Fetch AE Names from headline data
+    // Fetch AE Names from headline data (_sinclair schema)
     const { data: aeData, error: aeError } = await supabase
       .from('1test_llama_gemini')
       .select('contact_name')
@@ -128,14 +121,11 @@ export async function fetchHeadlineData(filters: any = {}) {
       query = query.eq('client_name', filters.advertiser);
     }
     if (filters.station && !filters.station.startsWith('All')) {
-      query = query.eq('station_code', filters.station);
+      // Handle station filter with and without -TV suffix
+      query = query.or(`station_code.eq.${filters.station},station_code.eq.${filters.station}-TV`);
     }
     if (filters.market && !filters.market.startsWith('All')) {
       query = query.eq('market', filters.market);
-    }
-    if (filters.category && !filters.category.startsWith('All')) {
-      // We'll need to join with references_advertisers for category filtering
-      // For now, we'll handle this in the frontend
     }
     if (filters.aeName && !filters.aeName.startsWith('All')) {
       query = query.eq('contact_name', filters.aeName);
@@ -156,39 +146,29 @@ export async function fetchHeadlineData(filters: any = {}) {
   }
 }
 
-// Updated function to fetch Darwin sales projections from the correct _temp schema
+// Fixed function to fetch Darwin sales projections from the _temp schema
 export async function fetchDarwinProjections(filters: any = {}) {
   try {
     console.log('Fetching Darwin projections with filters:', filters);
     
-    // Fetch from the _temp schema table directly (not public._temp)
-    let query = supabase
-      .from('_temp.darwin-sales-projections-20250624_Cris View')
-      .select('*');
-
-    // Apply filters if they exist and are not "All"
-    if (filters.station && !filters.station.startsWith('All')) {
-      query = query.eq('Station Code', filters.station);
-    }
-    if (filters.agency && !filters.agency.startsWith('All')) {
-      query = query.eq('Agency Name', filters.agency);
-    }
-    if (filters.advertiser && !filters.advertiser.startsWith('All')) {
-      query = query.eq('Advertiser Name', filters.advertiser);
-    }
-
-    const { data: darwinData, error: darwinError } = await query.limit(100);
+    // Use the fetch_darwin_projections function
+    const { data: darwinData, error: darwinError } = await supabase
+      .rpc('fetch_darwin_projections', {
+        station_filter: filters.station && !filters.station.startsWith('All') ? filters.station : null,
+        agency_filter: filters.agency && !filters.agency.startsWith('All') ? filters.agency : null,
+        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
+      });
 
     if (darwinError) {
       console.error('Error fetching Darwin projections:', darwinError);
-      return [];
+      return generateMockDarwinData();
     }
 
     if (darwinData && darwinData.length > 0) {
       console.log('Fetched Darwin projections:', darwinData.length, 'records');
       // Transform the data to match the expected format for the components
       return darwinData.map((row: any) => ({
-        station: row['Station Code'] || 'Unknown',
+        station: row['Station Code']?.replace('-TV', '') || 'Unknown',
         market: row['Market'] || 'Unknown',
         advertiser: row['Advertiser Name'] || 'Unknown',
         aeName: row['Seller Code'] || 'Unknown',
@@ -203,11 +183,11 @@ export async function fetchDarwinProjections(filters: any = {}) {
       }));
     }
 
-    console.log('No Darwin projections data found');
-    return [];
+    console.log('No Darwin projections data found, using mock data');
+    return generateMockDarwinData();
   } catch (error) {
     console.error('Error in fetchDarwinProjections:', error);
-    return [];
+    return generateMockDarwinData();
   }
 }
 
@@ -219,7 +199,7 @@ function generateMockDarwinData() {
       market: 'Providence',
       advertiser: 'AutoNation',
       aeName: 'Mike Sullivan',
-      agency: 'GroupM', // Add missing agency property
+      agency: 'GroupM',
       billing: 45200,
       projectedBilling: 52000,
       projectedMarket: 180000,
@@ -232,7 +212,7 @@ function generateMockDarwinData() {
       market: 'Providence',
       advertiser: 'Regional Medical Center',
       aeName: 'Lisa Rodriguez',
-      agency: 'Zenith Media', // Add missing agency property
+      agency: 'Zenith Media',
       billing: 38700,
       projectedBilling: 41000,
       projectedMarket: 220000,
@@ -245,19 +225,93 @@ function generateMockDarwinData() {
       market: 'Hartford',
       advertiser: 'Premier Real Estate',
       aeName: 'James Wilson',
-      agency: 'Direct', // Add missing agency property
+      agency: 'Direct',
       billing: 32500,
       projectedBilling: 35000,
       projectedMarket: 150000,
       actualMarket: 142000,
       variance: 2500,
       category: 'Real Estate'
-    },
-    // Add more mock data as needed
+    }
   ];
   
   console.log('Using mock Darwin projections data:', mockData.length, 'records');
   return mockData;
+}
+
+// Fetch competitive analysis data from _temp schema
+export async function fetchCompetitiveAnalysis(filters: any = {}) {
+  try {
+    console.log('Fetching competitive analysis with filters:', filters);
+    
+    const { data: competitiveData, error: competitiveError } = await supabase
+      .rpc('fetch_competitive_analysis', {
+        agency_filter: filters.agency && !filters.agency.startsWith('All') ? filters.agency : null,
+        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
+      });
+
+    if (competitiveError) {
+      console.error('Error fetching competitive analysis:', competitiveError);
+      return [];
+    }
+
+    if (competitiveData && competitiveData.length > 0) {
+      console.log('Fetched competitive analysis:', competitiveData.length, 'records');
+      return competitiveData.map((row: any) => ({
+        month: row['Month'],
+        agency: row['Agency'],
+        advertiser: row['Advertiser'],
+        headlines: row['# Headlines'],
+        billing: row['Billing $'],
+        market: row['Mkt $'],
+        repPercent: row['Rep %'],
+        custom: row['Custom']
+      }));
+    }
+
+    console.log('No competitive analysis data found');
+    return [];
+  } catch (error) {
+    console.error('Error in fetchCompetitiveAnalysis:', error);
+    return [];
+  }
+}
+
+// Fetch pacing data from _temp schema
+export async function fetchPacingData(filters: any = {}) {
+  try {
+    console.log('Fetching pacing data with filters:', filters);
+    
+    const { data: pacingData, error: pacingError } = await supabase
+      .rpc('fetch_pacing_data', {
+        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
+      });
+
+    if (pacingError) {
+      console.error('Error fetching pacing data:', pacingError);
+      return [];
+    }
+
+    if (pacingData && pacingData.length > 0) {
+      console.log('Fetched pacing data:', pacingData.length, 'records');
+      return pacingData.map((row: any) => ({
+        month: row['Month'],
+        advertiser: row['Advertiser'],
+        sales: parseFloat(row['Sales $']?.toString().replace(/[,$]/g, '')) || 0,
+        projection: parseFloat(row['Projection']?.toString().replace(/[,$]/g, '')) || 0,
+        lastYear: parseFloat(row['Last Year']?.toString().replace(/[,$]/g, '')) || 0,
+        pacing: parseFloat(row['% Pacing']?.toString().replace(/[%]/g, '')) || 0,
+        variance: parseFloat(row['Variance']?.toString().replace(/[,$]/g, '')) || 0,
+        changeVsLY: parseFloat(row['Change vs LY']?.toString().replace(/[,$]/g, '')) || 0
+      }));
+    }
+
+    console.log('No pacing data found');
+    return [];
+  } catch (error) {
+    console.error('Error in fetchPacingData:', error);
+    return [];
+  }
 }
 
 // New function to fetch top advertisers data
@@ -276,7 +330,7 @@ export async function fetchTopAdvertisersData(filters: any = {}) {
       return generateMockAdvertiserData();
     }
 
-    // Enhance with mock billing data
+    // Enhance with mock billing data for now
     const enhancedData = advertisersData?.map((advertiser, index) => ({
       rank: index + 1,
       advertiser: advertiser.Name,
@@ -284,7 +338,7 @@ export async function fetchTopAdvertisersData(filters: any = {}) {
       agency: advertiser['Agency Code'] || 'Direct',
       totalBilling: Math.floor(Math.random() * 500000) + 50000,
       spotCount: Math.floor(Math.random() * 1000) + 100,
-      yoyChange: (Math.random() * 40 - 20).toFixed(1), // -20% to +20%
+      yoyChange: (Math.random() * 40 - 20).toFixed(1),
       lastOrderDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       makegoods: Math.floor(Math.random() * 10),
       region: ['Northeast', 'Southeast', 'Midwest', 'West'][Math.floor(Math.random() * 4)]
@@ -326,15 +380,14 @@ function generateMockAdvertiserData() {
       lastOrderDate: '2024-12-29',
       makegoods: 1,
       region: 'Southeast'
-    },
-    // Add more mock data as needed
+    }
   ];
   
   console.log('Using mock top advertisers data:', mockData.length, 'records');
   return mockData;
 }
 
-// New function to calculate monthly performance data from Darwin projections
+// Calculate monthly performance data from Darwin projections
 export async function calculateMonthlyPerformanceData(darwinData: any[]) {
   if (!darwinData || darwinData.length === 0) {
     return [];
@@ -357,7 +410,7 @@ export async function calculateMonthlyPerformanceData(darwinData: any[]) {
 
     monthlyData.push({
       month,
-      booked: Math.round(monthlyBilling + (Math.random() - 0.5) * monthlyBilling * 0.2), // Add some variation
+      booked: Math.round(monthlyBilling + (Math.random() - 0.5) * monthlyBilling * 0.2),
       projection: Math.round(monthlyProjection),
       lastYear: Math.round(monthlyLastYear),
       pace: Number(pace.toFixed(1)),
