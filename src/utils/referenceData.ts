@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ReferenceData {
@@ -155,67 +156,28 @@ export async function fetchHeadlineData(filters: any = {}) {
   }
 }
 
-// New function to fetch competitive analysis data
-export async function fetchCompetitiveAnalysisData(filters: any = {}) {
-  try {
-    console.log('Fetching competitive analysis data with filters:', filters);
-    
-    // Use the schema-qualified table name directly
-    const { data, error } = await supabase
-      .rpc('fetch_competitive_analysis', {
-        agency_filter: filters.agency && !filters.agency.startsWith('All') ? filters.agency : null,
-        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
-      });
-
-    if (error) {
-      console.error('Error fetching competitive analysis data:', error);
-      return [];
-    }
-
-    console.log('Fetched competitive analysis data:', data?.length || 0, 'records');
-    return data || [];
-  } catch (error) {
-    console.error('Error in fetchCompetitiveAnalysisData:', error);
-    return [];
-  }
-}
-
-// New function to fetch pacing data
-export async function fetchPacingData(filters: any = {}) {
-  try {
-    console.log('Fetching pacing data with filters:', filters);
-    
-    // Use the schema-qualified table name directly
-    const { data, error } = await supabase
-      .rpc('fetch_pacing_data', {
-        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
-      });
-
-    if (error) {
-      console.error('Error fetching pacing data:', error);
-      return [];
-    }
-
-    console.log('Fetched pacing data:', data?.length || 0, 'records');
-    return data || [];
-  } catch (error) {
-    console.error('Error in fetchPacingData:', error);
-    return [];
-  }
-}
-
-// Updated function to fetch Darwin sales projections using RPC
+// Updated function to fetch Darwin sales projections from the correct _temp schema
 export async function fetchDarwinProjections(filters: any = {}) {
   try {
     console.log('Fetching Darwin projections with filters:', filters);
     
-    // Use RPC function to fetch from the _temp schema
-    const { data: darwinData, error: darwinError } = await supabase
-      .rpc('fetch_darwin_projections', {
-        station_filter: filters.station && !filters.station.startsWith('All') ? filters.station : null,
-        agency_filter: filters.agency && !filters.agency.startsWith('All') ? filters.agency : null,
-        advertiser_filter: filters.advertiser && !filters.advertiser.startsWith('All') ? filters.advertiser : null
-      });
+    // Fetch from the _temp schema table directly (not public._temp)
+    let query = supabase
+      .from('_temp.darwin-sales-projections-20250624_Cris View')
+      .select('*');
+
+    // Apply filters if they exist and are not "All"
+    if (filters.station && !filters.station.startsWith('All')) {
+      query = query.eq('Station Code', filters.station);
+    }
+    if (filters.agency && !filters.agency.startsWith('All')) {
+      query = query.eq('Agency Name', filters.agency);
+    }
+    if (filters.advertiser && !filters.advertiser.startsWith('All')) {
+      query = query.eq('Advertiser Name', filters.advertiser);
+    }
+
+    const { data: darwinData, error: darwinError } = await query.limit(100);
 
     if (darwinError) {
       console.error('Error fetching Darwin projections:', darwinError);
@@ -226,8 +188,7 @@ export async function fetchDarwinProjections(filters: any = {}) {
       console.log('Fetched Darwin projections:', darwinData.length, 'records');
       // Transform the data to match the expected format for the components
       return darwinData.map((row: any) => ({
-        stationCode: row['Station Code'] || 'Unknown',
-        station: row['Station Code'] || 'Unknown', // Add station property that matches stationCode
+        station: row['Station Code'] || 'Unknown',
         market: row['Market'] || 'Unknown',
         advertiser: row['Advertiser Name'] || 'Unknown',
         aeName: row['Seller Code'] || 'Unknown',
@@ -238,9 +199,7 @@ export async function fetchDarwinProjections(filters: any = {}) {
         projectedMarket: parseFloat(row['Proj Market$']?.toString().replace(/[,$]/g, '')) || 0,
         actualMarket: parseFloat(row['Q3-2025 Market$']?.toString().replace(/[,$]/g, '')) || 0,
         variance: parseFloat(row['Proj Diff$']?.toString().replace(/[,$]/g, '')) || 0,
-        category: row['Category'] || 'Unknown',
-        quarter: row['Quarter'] || 'Q3-2025',
-        projectedShare: parseFloat(row['Proj Share%']?.toString().replace(/%/g, '')) || 0
+        category: row['Category'] || 'Unknown'
       }));
     }
 
@@ -375,26 +334,13 @@ function generateMockAdvertiserData() {
   return mockData;
 }
 
-// Updated function to calculate monthly performance data from real data sources
-export async function calculateMonthlyPerformanceData(darwinData: any[], pacingData: any[] = []) {
-  if (pacingData && pacingData.length > 0) {
-    // Use real pacing data if available
-    return pacingData.map((row: any) => ({
-      month: row['Month'] || 'Unknown',
-      booked: parseFloat(row['Sales $']?.toString().replace(/[,$]/g, '')) || 0,
-      projection: parseFloat(row['Projection']?.toString().replace(/[,$]/g, '')) || 0,
-      lastYear: parseFloat(row['Last Year']?.toString().replace(/[,$]/g, '')) || 0,
-      pace: parseFloat(row['% Pacing']?.toString().replace(/%/g, '')) || 0,
-      variance: parseFloat(row['Variance']?.toString().replace(/[,$]/g, '')) || 0,
-      changeVsLastYear: parseFloat(row['Change vs LY']?.toString().replace(/[,$]/g, '')) || 0
-    }));
-  }
-
+// New function to calculate monthly performance data from Darwin projections
+export async function calculateMonthlyPerformanceData(darwinData: any[]) {
   if (!darwinData || darwinData.length === 0) {
     return [];
   }
 
-  // Fallback to Darwin data calculations
+  // Group data by month and calculate aggregated metrics
   const monthlyData = [];
   const months = ['Jan 24', 'Feb 24', 'Mar 24', 'Apr 24', 'May 24', 'Jun 24', 'Jul 24', 'Aug 24', 'Sep 24'];
   

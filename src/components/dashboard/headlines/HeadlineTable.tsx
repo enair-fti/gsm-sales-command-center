@@ -8,12 +8,6 @@ interface HeadlineTableProps {
 }
 
 export const HeadlineTable: React.FC<HeadlineTableProps> = ({ headlineData }) => {
-  // Function to remove "-TV" suffix from station names
-  const formatStationName = (stationName: string | null | undefined): string => {
-    if (!stationName) return '-';
-    return stationName.replace(/-TV$/i, '');
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -44,7 +38,7 @@ export const HeadlineTable: React.FC<HeadlineTableProps> = ({ headlineData }) =>
                   <TableCell className="font-medium">{row.client_name || '-'}</TableCell>
                   <TableCell>{row.product_name || '-'}</TableCell>
                   <TableCell>{row.access_name || '-'}</TableCell>
-                  <TableCell>{formatStationName(row.station_name)}</TableCell>
+                  <TableCell>{row.station_name || '-'}</TableCell>
                   <TableCell>{row.market || '-'}</TableCell>
                   <TableCell>{row.flight_schedule || '-'}</TableCell>
                   <TableCell>{row.cost || '-'}</TableCell>

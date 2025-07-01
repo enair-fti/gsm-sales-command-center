@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, UserPlus, UserMinus, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -201,20 +201,22 @@ const PartnerMovement: React.FC<PartnerMovementProps> = ({ station, filters }) =
         </Card>
       </div>
 
-      {/* Returns Table (Non-Returners + Returners) */}
+      {/* Detailed Tabs */}
       <Card>
         <CardHeader>
-          <CardTitle>Returns Movement</CardTitle>
-          <CardDescription>Agencies that have left or returned to business with us</CardDescription>
+          <CardTitle>Detailed Partner Movement</CardTitle>
+          <CardDescription>Click tabs to view different categories of partner movement</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {/* Non-Returners Section */}
-            <div>
-              <h3 className="text-lg font-semibold text-red-600 mb-3 flex items-center">
-                <UserMinus className="w-5 h-5 mr-2" />
-                Non-Returners ({summaryStats.nonReturners})
-              </h3>
+          <Tabs defaultValue="non-returners" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="non-returners">Non-Returners</TabsTrigger>
+              <TabsTrigger value="returners">Returners</TabsTrigger>
+              <TabsTrigger value="decliners">Decliners</TabsTrigger>
+              <TabsTrigger value="adders">Adders</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="non-returners" className="mt-4">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -241,14 +243,9 @@ const PartnerMovement: React.FC<PartnerMovementProps> = ({ station, filters }) =
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* Returners Section */}
-            <div>
-              <h3 className="text-lg font-semibold text-green-600 mb-3 flex items-center">
-                <UserPlus className="w-5 h-5 mr-2" />
-                Returners ({summaryStats.returners})
-              </h3>
+            </TabsContent>
+            
+            <TabsContent value="returners" className="mt-4">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -275,25 +272,9 @@ const PartnerMovement: React.FC<PartnerMovementProps> = ({ station, filters }) =
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Adders Table (Decliners + Adders) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Spend Movement</CardTitle>
-          <CardDescription>Agencies that have increased or decreased their spending with us</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Decliners Section */}
-            <div>
-              <h3 className="text-lg font-semibold text-amber-600 mb-3 flex items-center">
-                <TrendingDown className="w-5 h-5 mr-2" />
-                Decliners ({summaryStats.decliners})
-              </h3>
+            </TabsContent>
+            
+            <TabsContent value="decliners" className="mt-4">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -320,14 +301,9 @@ const PartnerMovement: React.FC<PartnerMovementProps> = ({ station, filters }) =
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* Adders Section */}
-            <div>
-              <h3 className="text-lg font-semibold text-blue-600 mb-3 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2" />
-                Adders ({summaryStats.adders})
-              </h3>
+            </TabsContent>
+            
+            <TabsContent value="adders" className="mt-4">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -354,8 +330,8 @@ const PartnerMovement: React.FC<PartnerMovementProps> = ({ station, filters }) =
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

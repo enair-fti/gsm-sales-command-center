@@ -4556,54 +4556,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      fetch_competitive_analysis: {
-        Args: { agency_filter?: string; advertiser_filter?: string }
-        Returns: {
-          Month: string
-          Agency: string
-          Advertiser: string
-          "# Headlines": number
-          "Billing $": number
-          "Mkt $": number
-          "Rep %": number
-          Custom: number
-        }[]
-      }
-      fetch_darwin_projections: {
-        Args: {
-          station_filter?: string
-          agency_filter?: string
-          advertiser_filter?: string
-        }
-        Returns: {
-          "Station Code": string
-          Market: string
-          "Advertiser Name": string
-          "Seller Code": string
-          "Agency Name": string
-          "Q3-2025 Billing$": string
-          "Proj Billing$": string
-          "Proj Market$": string
-          "Q3-2025 Market$": string
-          "Proj Diff$": string
-          Category: string
-          Quarter: string
-          "Proj Share%": string
-        }[]
-      }
-      fetch_pacing_data: {
-        Args: { advertiser_filter?: string }
-        Returns: {
-          Month: string
-          Advertiser: string
-          "Sales $": string
-          Projection: string
-          "Last Year": string
-          "% Pacing": string
-          Variance: string
-          "Change vs LY": string
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
