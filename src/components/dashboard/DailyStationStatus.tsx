@@ -41,9 +41,13 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
         const darwinData = await fetchDarwinProjections(filters);
         console.log('Fetched Darwin projections for station status:', darwinData.length);
         
-        if (darwinData.length > 0) {
-          setIsRealData(true);
-          
+        // Check if we got real data by verifying if it's more than our mock data count
+        const hasRealData = darwinData.length > 3 || 
+          (darwinData.length === 3 && !darwinData.some(item => item.station === 'WPRO-FM'));
+        
+        setIsRealData(hasRealData);
+        
+        if (hasRealData) {
           // Calculate monthly performance data from real Darwin data
           const monthlyData = await calculateMonthlyPerformanceData(darwinData);
           setStationData(monthlyData);
@@ -64,7 +68,6 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
           
         } else {
           // Use mock data if no real data available
-          setIsRealData(false);
           const mockStationData = [
             { month: 'Jan 24', booked: 245000, projection: 260000, lastYear: 225000, pace: 94.2, variance: 20000, changeVsLastYear: 20000 },
             { month: 'Feb 24', booked: 268000, projection: 275000, lastYear: 240000, pace: 97.5, variance: 28000, changeVsLastYear: 28000 },
@@ -100,7 +103,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
     { 
       title: "Sales Dollars (MTD)", 
       value: `$${(kpiMetrics.salesDollars / 1000).toFixed(0)}K`, 
-      change: isRealData ? "Real Darwin Data" : "+3.6%", 
+      change: isRealData ? "Real Darwin Data" : "Mock Data", 
       positive: true,
       icon: DollarSign,
       tooltip: isRealData ? "Month-to-date confirmed sales dollars from Darwin projections" : "Sample data - not real Darwin projections"
@@ -190,7 +193,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
             <span>Export</span>
           </button>
           <Badge variant="outline" className={`text-xs ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-            {isRealData ? 'Real Darwin Data' : 'Mock Data - Sample projections'}
+            {isRealData ? 'Real Darwin Data' : 'Mock Data'}
           </Badge>
         </div>
       </div>
@@ -222,7 +225,7 @@ const DailyStationStatus: React.FC<DailyStationStatusProps> = ({ station, filter
       {/* Performance Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Sales Performance & Pacing {isRealData ? '(Real Darwin Data)' : '(Sample Data)'}</CardTitle>
+          <CardTitle>Sales Performance & Pacing {isRealData ? '(Real Darwin Data)' : '(Mock Data)'}</CardTitle>
           <CardDescription>
             Monthly sales dollars vs. projections with pacing indicators {isRealData ? 'from Darwin system' : 'using sample data'}
             <Badge variant="outline" className={`text-xs ml-2 ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>

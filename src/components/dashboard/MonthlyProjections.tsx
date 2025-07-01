@@ -31,6 +31,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
   const [filterMarket, setFilterMarket] = useState<string>('All');
   const [projectionsData, setProjectionsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRealData, setIsRealData] = useState(false);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
 
@@ -50,6 +51,12 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         setLoading(true);
         let data = await fetchDarwinProjections(filters);
         
+        // Check if we got real data by verifying if it's more than our mock data count
+        const hasRealData = data.length > 3 || 
+          (data.length === 3 && !data.some(item => item.station === 'WPRO-FM'));
+        
+        setIsRealData(hasRealData);
+        
         // Apply filters
         if (filters.agency && !filters.agency.startsWith('All')) {
           data = data.filter(item => item.agency === filters.agency);
@@ -67,6 +74,7 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
         setProjectionsData(data);
       } catch (error) {
         console.error('Error fetching projections data:', error);
+        setIsRealData(false);
       } finally {
         setLoading(false);
       }
@@ -139,6 +147,9 @@ const MonthlyProjections: React.FC<MonthlyProjectionsProps> = ({ station, filter
           </div>
           <Badge variant="outline" className="text-sm">
             {filteredData.length} Advertisers
+          </Badge>
+          <Badge variant="outline" className={`text-xs ${isRealData ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+            {isRealData ? 'Real Data' : 'Mock Data'}
           </Badge>
         </div>
       </div>

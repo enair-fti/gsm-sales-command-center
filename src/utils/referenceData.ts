@@ -53,7 +53,7 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
       defaultData.categories = ['All Categories', ...uniqueCategories];
     }
 
-    // Fetch stations from references_stations (without Region column)
+    // Fetch stations from references_stations
     const { data: stationsData, error: stationsError } = await supabase
       .from('references_stations')
       .select('Code, "Market Name"')
@@ -146,37 +146,27 @@ export async function fetchHeadlineData(filters: any = {}) {
   }
 }
 
-// Direct table query approach since RPC functions may not exist
+// Direct table query approach for Darwin projections from _temp schema
 export async function fetchDarwinProjections(filters: any = {}) {
   try {
     console.log('Fetching Darwin projections from _temp schema with filters:', filters);
     
-    // Try to query the _temp schema table directly
+    // Query the _temp schema table directly (corrected schema reference)
     const { data: tempData, error: tempError } = await supabase
-      .from('_temp.darwin-sales-projections-20250624_Cris View')
+      .from('_temp."darwin-sales-projections-20250624_Cris View"')
       .select('*');
 
     if (tempError) {
       console.error('Error fetching from _temp schema:', tempError);
-      
-      // If _temp schema fails, try without schema prefix
-      const { data: altData, error: altError } = await supabase
-        .from('darwin-sales-projections-20250624_Cris View')
-        .select('*');
-
-      if (altError) {
-        console.error('Error fetching Darwin projections from alt approach:', altError);
-        return generateMockDarwinData();
-      }
-
-      console.log('Fetched Darwin projections (alt approach):', altData?.length || 0, 'records');
-      return transformDarwinData(altData || []);
+      console.log('Using mock Darwin projections data');
+      return generateMockDarwinData();
     }
 
     console.log('Fetched Darwin projections (_temp):', tempData?.length || 0, 'records');
     return transformDarwinData(tempData || []);
   } catch (error) {
     console.error('Error in fetchDarwinProjections:', error);
+    console.log('Using mock Darwin projections data');
     return generateMockDarwinData();
   }
 }
@@ -242,17 +232,16 @@ function generateMockDarwinData() {
     }
   ];
   
-  console.log('Using mock Darwin projections data:', mockData.length, 'records');
   return mockData;
 }
 
-// Fetch competitive analysis data directly from table
+// Fetch competitive analysis data directly from _temp schema
 export async function fetchCompetitiveAnalysis(filters: any = {}) {
   try {
     console.log('Fetching competitive analysis with filters:', filters);
     
     const { data: competitiveData, error: competitiveError } = await supabase
-      .from('_temp.Competitive Analysis_250624-1224_AgyAdv')
+      .from('_temp."Competitive Analysis_250624-1224_AgyAdv"')
       .select('*');
 
     if (competitiveError) {
@@ -282,13 +271,13 @@ export async function fetchCompetitiveAnalysis(filters: any = {}) {
   }
 }
 
-// Fetch pacing data directly from table
+// Fetch pacing data directly from _temp schema
 export async function fetchPacingData(filters: any = {}) {
   try {
     console.log('Fetching pacing data with filters:', filters);
     
     const { data: pacingData, error: pacingError } = await supabase
-      .from('_temp.Pacing_250624-1221_Adv')
+      .from('_temp."Pacing_250624-1221_Adv"')
       .select('*');
 
     if (pacingError) {
